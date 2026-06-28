@@ -557,20 +557,21 @@ function PhotoSlot({label,photos,onAdd,onAddBatch,onRemove,onView}){
   React.useEffect(()=>{if(has)setIdx(photos.length-1);},[photos.length]);
 
   async function handleFiles(e){
-    const files=Array.from(e.target.files);
+    const files=Array.from(e.target.files||[]);
     if(!files.length)return;
-    e.target.value='';
     setUploading({done:0,total:files.length});
-    // Process all in parallel
-    const results=await Promise.all(files.map(file=>new Promise(res=>{
-      const r=new FileReader();
-      r.onload=async ev=>{
-        const compressed=await compressImage(ev.target.result);
-        setUploading(u=>u?{...u,done:u.done+1}:null);
-        res(compressed);
-      };
-      r.readAsDataURL(file);
-    })));
+    const results=[];
+    for(let i=0;i<files.length;i++){
+      const src=await new Promise((res,rej)=>{
+        const r=new FileReader();
+        r.onload=async ev=>{try{res(await compressImage(ev.target.result));}catch(err){rej(err);}};
+        r.onerror=rej;
+        r.readAsDataURL(files[i]);
+      });
+      results.push(src);
+      setUploading({done:i+1,total:files.length});
+    }
+    e.target.value='';
     setUploading(null);
     if(onAddBatch) onAddBatch(results);
     else results.forEach(src=>onAdd(src));
