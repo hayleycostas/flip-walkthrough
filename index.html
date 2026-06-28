@@ -1716,8 +1716,11 @@ function WalkthroughView({prop,currentUser,onBack,onPropUpdate}){
   async function updateItem(catId,itemId,value){
     setSyncStatus('syncing');
     const stamped={...value,updatedAt:Date.now(),updatedBy:username};
-    const next={...data,[catId]:{...(data[catId]||{}),[itemId]:stamped}};
-    setData(next);
+    setData(prev=>{
+      const next={...prev,[catId]:{...(prev[catId]||{}),[itemId]:stamped}};
+      mergedRef.current=next;
+      return next;
+    });
     // Split: lightweight fields to /data, photos to /photos
     const{photosBefore,photosVision,...noPhotos}=stamped;
     const writes=[dbUpdate(`projects/${prop.id}/data/${catId}`,{[itemId]:noPhotos})];
