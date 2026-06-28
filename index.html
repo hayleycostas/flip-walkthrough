@@ -1056,21 +1056,19 @@ function AddPropertyModal({onAdd,onClose}){
 function MigrationModal({currentUser,onDone}){
   const[migrating,setMigrating]=React.useState(false);
   const[done,setDone]=React.useState(false);
+  const[err,setErr]=React.useState('');
+  const[progress,setProgress]=React.useState('');
   let oldProps=[];
   try{oldProps=JSON.parse(localStorage.getItem('flip_properties')||'[]');}catch{}
 
   async function migrate(){
-    setMigrating(true);
-    // Build one big multi-path update — single round-trip to Firebase
-    const batch={};
-    const uid=currentUser.uid;
+    setMigrating(true);setErr('');
+    const myUid=currentUser.uid;
     const now=Date.now();
-    for(const prop of oldProps){
-      batch[`projects/${prop.id}/meta`]={...prop,ownerId:uid,ownerName:currentUser.displayName||currentUser.email,updatedAt:now};
-      batch[`projects/${prop.id}/members/${uid}`]={name:currentUser.displayName||currentUser.email,email:currentUser.email,role:'owner',addedAt:now};
-      batch[`userProjects/${uid}/${prop.id}`]=true;
-      const data=JSON.parse(localStorage.getItem(`flip_data_${prop.id}`)||'{}');
-      if(Object.keys(data).length){
+    try{
+      for(const prop of oldProps){
+        setProgress(`Importing ${prop.address}…`);
+        const data=JSON.parse(localStorage.getItem(`flip_data_${prop.id}`)||'{}');
         const lightweight={};
         CATEGORIES.forEach(cat=>{
           if(!data[cat.id])return;
@@ -1082,13 +1080,23 @@ function MigrationModal({currentUser,onDone}){
         if(data._summary){
           lightweight._summary={overview:data._summary.overview,priorities:data._summary.priorities,budget:data._summary.budget,timeline:data._summary.timeline};
         }
-        batch[`projects/${prop.id}/data`]=lightweight;
+        // Write all paths for this property in parallel
+        await Promise.all([
+          dbSet(`projects/${prop.id}/meta`,{...prop,ownerId:myUid,ownerName:currentUser.displayName||currentUser.email,updatedAt:now}),
+          dbSet(`projects/${prop.id}/members/${myUid}`,{name:currentUser.displayName||currentUser.email,email:currentUser.email,role:'owner',addedAt:now}),
+          dbSet(`userProjects/${myUid}/${prop.id}`,true),
+          Object.keys(lightweight).length ? dbSet(`projects/${prop.id}/data`,lightweight) : Promise.resolve(),
+        ]);
       }
+      setProgress('');
+      localStorage.removeItem('flip_properties');
+      oldProps.forEach(p=>localStorage.removeItem(`flip_data_${p.id}`));
+      setMigrating(false);setDone(true);
+    }catch(e){
+      setProgress('');
+      setErr('Error: '+e.message+' — Check that your Firebase Database rules allow writes (see the Rebuild Guide).');
+      setMigrating(false);
     }
-    await getDb().ref('/').update(batch);
-    localStorage.removeItem('flip_properties');
-    oldProps.forEach(p=>localStorage.removeItem(`flip_data_${p.id}`));
-    setMigrating(false);setDone(true);
   }
 
   if(done)return(
@@ -1102,8 +1110,10 @@ function MigrationModal({currentUser,onDone}){
   return(
     <div className="modal-overlay"><div className="modal">
       <h2>📦 Import Existing Data</h2>
-      <p>We found {oldProps.length} {oldProps.length===1?'property':'properties'} saved locally. We'll import all checklists, notes, and project details instantly. Photos stay on this device only (re-upload from the app to share them with your team).</p>
+      <p>We found {oldProps.length} {oldProps.length===1?'property':'properties'} saved locally. Checklists, notes, and project details will be imported. Photos stay on this device (re-upload from the app to share with your team).</p>
       {oldProps.map(p=><div key={p.id} className="migration-item">🏠 {p.address}</div>)}
+      {progress&&<div style={{fontSize:13,color:'#0f3460',margin:'10px 0'}}>⏳ {progress}</div>}
+      {err&&<div style={{fontSize:12,color:'#dc3545',margin:'10px 0',lineHeight:1.5}}>⚠️ {err}</div>}
       <div className="modal-btns" style={{marginTop:16}}>
         <button className="btn-primary" onClick={migrate} disabled={migrating}>{migrating?'Importing…':'Import to My Account'}</button>
         <button className="btn-secondary" onClick={onDone}>Skip</button>
