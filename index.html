@@ -280,9 +280,7 @@ function initFirebase(apiKey) {
     return true;
   } catch(e) { return false; }
 }
-// Auto-init if key was saved previously
-const _savedKey = localStorage.getItem('fb_api_key');
-if (_savedKey) initFirebase(_savedKey);
+initFirebase('AIzaSyBcKTjlFLaExaFuSiuRusH2MDpCm8VzlDQ');
 
 function getAuth() { return firebase.apps.length ? firebase.auth() : null; }
 function getDb()   { return firebase.apps.length ? firebase.database() : null; }
@@ -1279,7 +1277,7 @@ function App(){
   const[currentProp,setCurrentProp]=React.useState(null);
   const[showSignup,setShowSignup]=React.useState(false);
   const[inviteInfo,setInviteInfo]=React.useState(null);
-  const[firebaseReady,setFirebaseReady]=React.useState(!!firebase.apps.length);
+  const[firebaseReady,setFirebaseReady]=React.useState(true);
 
   // Check for invite token in URL
   const inviteToken=React.useMemo(()=>{
@@ -1311,7 +1309,6 @@ function App(){
     return unsub;
   },[firebaseReady,inviteToken,inviteInfo]);
 
-  if(!firebaseReady)return<SetupPage onDone={()=>{setFirebaseReady(true);}}/>;
   if(authUser===undefined)return<div className="spinner-page"><div className="spinner"/></div>;
   if(!authUser){
     return showSignup
