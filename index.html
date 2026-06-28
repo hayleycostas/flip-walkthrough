@@ -290,6 +290,22 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .step-dot.active { background: #0f3460; }
 .invite-sent { background: #f0f8f0; border: 1px solid #c3e6cb; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #155724; margin-bottom: 6px; }
 
+/* AI Analyzer */
+.ai-analyze-btn { width: 100%; background: linear-gradient(135deg,#1a1a2e,#0f3460); color: white; border: none; border-radius: 12px; padding: 16px; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px; }
+.ai-analyze-btn:disabled { opacity: .6; cursor: default; }
+.ai-step { text-align: center; padding: 20px 0; }
+.ai-step .ai-icon { font-size: 40px; margin-bottom: 12px; }
+.ai-step p { font-size: 14px; color: #666; line-height: 1.6; }
+.ai-progress { margin: 16px 0; }
+.ai-progress-bar { background: #f0f0f0; border-radius: 100px; height: 8px; overflow: hidden; margin-bottom: 8px; }
+.ai-progress-fill { height: 8px; background: linear-gradient(90deg,#0f3460,#e2b04a); border-radius: 100px; transition: width .4s; }
+.ai-progress-label { font-size: 12px; color: #888; text-align: center; }
+.ai-result-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; }
+.ai-result-item:last-child { border-bottom: none; }
+.ai-result-cat { font-size: 11px; font-weight: 700; color: #0f3460; background: #e8f0fb; border-radius: 20px; padding: 2px 8px; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+.ai-result-text { font-size: 13px; color: #333; line-height: 1.4; }
+.ai-result-label { font-weight: 600; }
+
 /* Sync bar */
 .sync-bar { background: #0a2744; padding: 4px 16px; display: flex; align-items: center; gap: 6px; font-size: 11px; color: rgba(255,255,255,.5); }
 .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #28a745; flex-shrink: 0; }
@@ -321,6 +337,73 @@ function initFirebase(apiKey) {
   } catch(e) { return false; }
 }
 initFirebase('AIzaSyBcKTjlFLaExaFuSiuRusH2MDpCm8VzlDQ');
+
+// Gemini key stored in Firebase so all team members share one key
+const getGeminiKey = () => dbGet('config/geminiKey');
+const GEMINI_URL_FOR = key => `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+
+const GEMINI_PROMPT = `You are a real estate renovation expert reviewing a property walkthrough.
+Analyze these video frames and identify ALL renovation work needed.
+Return ONLY a valid JSON object — no markdown, no explanation — with this exact structure:
+{
+  "exterior":    {"roof":null,"gutters":null,"soffit_fascia":null,"window_door_trim":null,"siding":null,"exterior_doors":null,"front_porch":null,"garage":null,"driveway":null,"back_porch":null,"landscaping":null},
+  "interior":    {"demo":null,"framing":null,"layout_change":null,"wall_knocking":null,"drywall":null,"paint":null,"flooring":null,"subfloor":null,"trim_quarterround":null,"windows":null,"interior_doors":null,"electric_trim":null,"garbage_removal":null},
+  "kitchen":     {"cabinets":null,"island":null,"countertop":null,"backsplash":null,"appliances":null},
+  "bathroom":    {"vanity":null,"mirror":null,"toilet":null,"tub":null,"bathroom_floor":null,"vents":null},
+  "plumbing":    {"plumbing_bathroom":null,"plumbing_kitchen":null,"laundry":null},
+  "electrical":  {"panel":null,"wiring":null,"addons":null},
+  "mechanic":    {"hvac":null,"water_heater":null,"misc":null},
+  "below_grade": {"basement_general":null,"basement_walls":null,"basement_floor":null,"basement_moisture":null,"basement_egress":null,"crawlspace_general":null,"crawlspace_vapor":null,"crawlspace_insulation":null,"foundation_general":null,"foundation_cracks":null,"foundation_waterproofing":null,"sump_pump":null},
+  "summary": {"overview":"","priorities":[]}
+}
+For each item: write a short specific note about the work needed (e.g. "Full replacement — walls stripped to studs"), or leave null if no work needed or not visible. Be a contractor, be specific.`;
+
+async function extractVideoFrames(file, count=8){
+  return new Promise((resolve,reject)=>{
+    const video=document.createElement('video');
+    video.muted=true; video.playsInline=true;
+    video.src=URL.createObjectURL(file);
+    video.onloadedmetadata=async()=>{
+      const dur=video.duration;
+      const canvas=document.createElement('canvas');
+      const scale=Math.min(1,512/Math.max(video.videoWidth,video.videoHeight));
+      canvas.width=Math.round(video.videoWidth*scale);
+      canvas.height=Math.round(video.videoHeight*scale);
+      const ctx=canvas.getContext('2d');
+      const frames=[];
+      for(let i=0;i<count;i++){
+        video.currentTime=(i+0.5)*dur/count;
+        await new Promise(r=>{video.onseeked=r;});
+        ctx.drawImage(video,0,0,canvas.width,canvas.height);
+        frames.push(canvas.toDataURL('image/jpeg',0.6).split(',')[1]);
+      }
+      URL.revokeObjectURL(video.src);
+      resolve(frames);
+    };
+    video.onerror=reject;
+    video.load();
+  });
+}
+
+async function callGemini(frames){
+  const key=await getGeminiKey();
+  if(!key) throw new Error('NO_KEY');
+  const parts=[
+    {text:GEMINI_PROMPT},
+    ...frames.map(data=>({inline_data:{mime_type:'image/jpeg',data}}))
+  ];
+  const resp=await fetch(GEMINI_URL_FOR(key),{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contents:[{parts}]})
+  });
+  if(!resp.ok) throw new Error(`Gemini error ${resp.status}: ${await resp.text()}`);
+  const json=await resp.json();
+  const text=json.candidates?.[0]?.content?.parts?.[0]?.text||'';
+  const match=text.match(/\{[\s\S]*\}/);
+  if(!match) throw new Error('No JSON in response: '+text.slice(0,200));
+  return JSON.parse(match[0]);
+}
 
 function getAuth() { return firebase.apps.length ? firebase.auth() : null; }
 function getDb()   { return firebase.apps.length ? firebase.database() : null; }
@@ -662,12 +745,141 @@ function VideoSection({propId,videos,onChange,uploadedBy}){
   );
 }
 
+// ── VideoAnalyzer ────────────────────────────────────────────────────
+function VideoAnalyzer({onApply,onClose,isOwner}){
+  const[step,setStep]=React.useState('pick'); // pick|extracting|analyzing|review
+  const[progress,setProgress]=React.useState(0);
+  const[statusMsg,setStatusMsg]=React.useState('');
+  const[result,setResult]=React.useState(null);
+  const[err,setErr]=React.useState('');
+  const[keyInput,setKeyInput]=React.useState('');
+  const[savingKey,setSavingKey]=React.useState(false);
+  const inputRef=React.useRef();
+
+  async function saveKey(){
+    if(!keyInput.trim())return;
+    setSavingKey(true);
+    await dbSet('config/geminiKey',keyInput.trim());
+    setSavingKey(false); setErr(''); setKeyInput('');
+  }
+
+  async function handleFile(e){
+    const file=e.target.files[0]; if(!file)return;
+    setErr('');
+    try{
+      setStep('extracting'); setStatusMsg('Extracting frames…'); setProgress(20);
+      const frames=await extractVideoFrames(file,8);
+      setStep('analyzing'); setStatusMsg(`Analyzing ${frames.length} frames with AI…`); setProgress(55);
+      const ai=await callGemini(frames);
+      setProgress(100); setResult(ai); setStep('review');
+    }catch(ex){
+      if(ex.message==='NO_KEY'){
+        setErr('NO_KEY'); setStep('pick');
+      } else {
+        setErr(ex.message); setStep('pick');
+      }
+    }
+  }
+
+  // Flatten result into display items
+  function getItems(){
+    if(!result)return[];
+    const items=[];
+    CATEGORIES.forEach(cat=>{
+      const catData=result[cat.id]||{};
+      cat.items.forEach(item=>{
+        const note=catData[item.id];
+        if(note) items.push({catLabel:cat.label,catIcon:cat.icon,itemLabel:item.label,note,catId:cat.id,itemId:item.id});
+      });
+    });
+    return items;
+  }
+
+  const items=getItems();
+
+  return(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" style={{maxHeight:'80vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
+        <h2>🤖 AI Scope of Work</h2>
+
+        {step==='pick'&&(
+          <>
+            <div className="ai-step">
+              <div className="ai-icon">🎥</div>
+              <p>Upload a walkthrough video and AI will automatically fill in your scope of work checklist based on what it sees.</p>
+            </div>
+            {err==='NO_KEY'?(
+              <div style={{background:'#fff8e6',border:'1px solid #e2b04a',borderRadius:10,padding:14,marginBottom:14}}>
+                <p style={{fontSize:13,fontWeight:700,color:'#b8860b',marginBottom:8}}>⚠️ Gemini API key not set</p>
+                {isOwner?(
+                  <>
+                    <p style={{fontSize:12,color:'#666',marginBottom:10}}>Get a free key at <strong>aistudio.google.com</strong> → Get API Key</p>
+                    <div className="invite-input-row">
+                      <input placeholder="Paste Gemini API key…" value={keyInput} onChange={e=>setKeyInput(e.target.value)}/>
+                      <button className="btn-sms" onClick={saveKey} disabled={savingKey}>{savingKey?'…':'Save'}</button>
+                    </div>
+                  </>
+                ):(
+                  <p style={{fontSize:12,color:'#666'}}>Ask the project owner to add the Gemini API key in Settings.</p>
+                )}
+              </div>
+            ):err?(
+              <div style={{fontSize:12,color:'#dc3545',marginBottom:12,lineHeight:1.5}}>⚠️ {err}</div>
+            ):null}
+            <button className="ai-analyze-btn" onClick={()=>inputRef.current.click()}>Choose Video to Analyze</button>
+            <input ref={inputRef} type="file" accept="video/*" style={{display:'none'}} onChange={handleFile}/>
+            <button className="btn-secondary" style={{width:'100%'}} onClick={onClose}>Cancel</button>
+          </>
+        )}
+
+        {(step==='extracting'||step==='analyzing')&&(
+          <div className="ai-step">
+            <div className="ai-icon">⏳</div>
+            <div className="ai-progress">
+              <div className="ai-progress-bar"><div className="ai-progress-fill" style={{width:progress+'%'}}/></div>
+              <div className="ai-progress-label">{statusMsg}</div>
+            </div>
+            <p>This takes about 15–30 seconds.</p>
+          </div>
+        )}
+
+        {step==='review'&&(
+          <>
+            <p style={{fontSize:13,color:'#555',marginBottom:14}}>
+              Found <strong>{items.length} items</strong> that need work. Review below then tap Apply to fill your checklist.
+            </p>
+            {result?.summary?.overview&&(
+              <div style={{background:'#f8f9fa',borderRadius:10,padding:12,marginBottom:14,fontSize:13,color:'#444',lineHeight:1.5}}>
+                <strong>Overview:</strong> {result.summary.overview}
+              </div>
+            )}
+            {items.map((it,i)=>(
+              <div key={i} className="ai-result-item">
+                <span className="ai-result-cat">{it.catIcon} {it.catLabel}</span>
+                <div className="ai-result-text"><span className="ai-result-label">{it.itemLabel}:</span> {it.note}</div>
+              </div>
+            ))}
+            {items.length===0&&<p style={{color:'#aaa',textAlign:'center'}}>No issues detected in this video.</p>}
+            <div className="modal-btns" style={{marginTop:20}}>
+              <button className="btn-primary" onClick={()=>{onApply(result);onClose();}}>✅ Apply to Scope ({items.length} items)</button>
+              <button className="btn-secondary" onClick={onClose}>Cancel</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── SummaryPage ──────────────────────────────────────────────────────
-function SummaryPage({summary,onChange,onView,propId,currentUser}){
+function SummaryPage({summary,onChange,onView,propId,currentUser,onApplyAI,isOwner}){
   const s=summary||{};
+  const[showAI,setShowAI]=React.useState(false);
   function upd(i,val){const l=[...(s.priorities||[])];l[i]=val;onChange({...s,priorities:l});}
   return(
     <div className="summary-page">
+      <button className="ai-analyze-btn" onClick={()=>setShowAI(true)}>✨ Auto-fill Scope from Video</button>
+      {showAI&&<VideoAnalyzer onApply={onApplyAI} onClose={()=>setShowAI(false)} isOwner={isOwner}/>}
       <div className="summary-card">
         <h3>📋 Project Overview</h3>
         <VoiceTextarea value={s.overview} onChange={v=>onChange({...s,overview:v})}
@@ -1485,6 +1697,36 @@ function WalkthroughView({prop,currentUser,onBack,onPropUpdate}){
     setSyncStatus('synced');
   }
 
+  async function applyAIScope(ai){
+    setSyncStatus('syncing');
+    const batch={};
+    const now=Date.now();
+    CATEGORIES.forEach(cat=>{
+      const catData=ai[cat.id]||{};
+      cat.items.forEach(item=>{
+        const note=catData[item.id];
+        if(note) batch[`${cat.id}/${item.id}`]={notes:note,status:'replace',updatedAt:now,updatedBy:username};
+      });
+    });
+    const summaryUpdate={
+      ...data._summary,
+      overview:ai.summary?.overview||data._summary?.overview||'',
+      priorities:ai.summary?.priorities||data._summary?.priorities||[]
+    };
+    const merged={...data};
+    Object.entries(batch).forEach(([path,val])=>{
+      const[cat,item]=path.split('/');
+      merged[cat]={...(merged[cat]||{}),[item]:val};
+    });
+    merged._summary=summaryUpdate;
+    setData(merged);
+    await Promise.all([
+      Object.keys(batch).length&&dbUpdate(`projects/${prop.id}/data`,batch),
+      dbUpdate(`projects/${prop.id}/data`,{_summary:{overview:summaryUpdate.overview,priorities:summaryUpdate.priorities,budget:summaryUpdate.budget,timeline:summaryUpdate.timeline}}),
+    ].filter(Boolean));
+    setSyncStatus('synced');
+  }
+
   async function updateSummary(value){
     const next={...data,_summary:value};
     setData(next);
@@ -1568,7 +1810,7 @@ function WalkthroughView({prop,currentUser,onBack,onPropUpdate}){
         </div>
       )}
 
-      {activeTab===TAB_SUMMARY&&<SummaryPage summary={data._summary} onChange={updateSummary} onView={src=>setLightbox(src)} propId={prop.id} currentUser={currentUser}/>}
+      {activeTab===TAB_SUMMARY&&<SummaryPage summary={data._summary} onChange={updateSummary} onView={src=>setLightbox(src)} propId={prop.id} currentUser={currentUser} onApplyAI={applyAIScope} isOwner={isOwner}/>}
       {activeTab===TAB_TEAM&&<ParticipantsPage prop={prop} data={data} currentUser={currentUser} isOwner={isOwner}/>}
       {activeTab>=0&&cat&&(
         <Swipeable onLeft={()=>setActiveTab(t=>Math.min(t+1,CATEGORIES.length-1))} onRight={()=>setActiveTab(t=>t<=0?TAB_SUMMARY:t-1)}>
