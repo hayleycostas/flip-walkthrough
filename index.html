@@ -126,6 +126,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .photo-empty { display: flex; }
 .photo-empty-half { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 14px 8px; gap: 4px; cursor: pointer; }
 .photo-empty-half:first-child { border-right: 1px solid #eee; }
+.photo-empty-third { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px 4px; gap: 4px; cursor: pointer; border-right: 1px solid #eee; }
+.photo-empty-third:last-child { border-right: none; }
 .photo-empty-icon { font-size: 22px; }
 .photo-empty-text { font-size: 11px; color: #bbb; text-align: center; }
 .photo-input { display: none; }
@@ -547,7 +549,7 @@ function VoiceTextarea({value,onChange,placeholder,minHeight=100}){
 function PhotoSlot({label,photos,onAdd,onAddBatch,onRemove,onView}){
   const[idx,setIdx]=React.useState(0);
   const[uploading,setUploading]=React.useState(null); // null or {done,total}
-  const cameraRef=React.useRef();const libraryRef=React.useRef();
+  const cameraRef=React.useRef();const libraryRef=React.useRef();const multiRef=React.useRef();
   const startX=React.useRef(null);
   const has=photos&&photos.length>0;
   const safeIdx=has?Math.min(idx,photos.length-1):0;
@@ -588,7 +590,8 @@ function PhotoSlot({label,photos,onAdd,onAddBatch,onRemove,onView}){
         <span>{label}</span>
         <div className="add-btns">
           <button className="add-btn gold" onClick={()=>cameraRef.current.click()}>📷</button>
-          <button className="add-btn" onClick={()=>libraryRef.current.click()}>+ Photos</button>
+          <button className="add-btn" onClick={()=>libraryRef.current.click()}>+ 1</button>
+          <button className="add-btn" onClick={()=>multiRef.current.click()}>+ Multi</button>
         </div>
       </div>
       {uploading&&(
@@ -598,8 +601,9 @@ function PhotoSlot({label,photos,onAdd,onAddBatch,onRemove,onView}){
       )}
       {!has&&!uploading?(
         <div className="photo-empty">
-          <div className="photo-empty-half" onClick={()=>cameraRef.current.click()}><span className="photo-empty-icon">📷</span><span className="photo-empty-text">Take Photo</span></div>
-          <div className="photo-empty-half" onClick={()=>libraryRef.current.click()}><span className="photo-empty-icon">🖼️</span><span className="photo-empty-text">Add Photos</span></div>
+          <div className="photo-empty-third" onClick={()=>cameraRef.current.click()}><span className="photo-empty-icon">📷</span><span className="photo-empty-text">Camera</span></div>
+          <div className="photo-empty-third" onClick={()=>libraryRef.current.click()}><span className="photo-empty-icon">🖼️</span><span className="photo-empty-text">1 Photo</span></div>
+          <div className="photo-empty-third" onClick={()=>multiRef.current.click()}><span className="photo-empty-icon">📚</span><span className="photo-empty-text">Multiple</span></div>
         </div>
       ):has?(
         <div>
@@ -620,7 +624,8 @@ function PhotoSlot({label,photos,onAdd,onAddBatch,onRemove,onView}){
         </div>
       ):null}
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="photo-input" onChange={handleFiles}/>
-      <input ref={libraryRef} type="file" accept="image/*" multiple className="photo-input" onChange={handleFiles}/>
+      <input ref={libraryRef} type="file" accept="image/*" className="photo-input" onChange={handleFiles}/>
+      <input ref={multiRef} type="file" accept="image/*" multiple className="photo-input" onChange={handleFiles}/>
     </div>
   );
 }
