@@ -1097,7 +1097,7 @@ function WalkthroughView({ prop, onBack, onPropUpdate, username }) {
   }
 
   function savePropFields() { onPropUpdate({ ...prop, sqft, curBed, curBath, futBed, futBath }); }
-  function handleSaveFirebase(url) { setFirebaseUrlState(url); setFirebaseUrl(url); }
+  function handleSaveFirebase(url) { setFirebaseUrl(url); }
 
   const cat = activeTab >= 0 ? CATEGORIES[activeTab] : null;
   const { done, total, pct } = totalProgress(data);
