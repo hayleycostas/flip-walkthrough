@@ -1703,12 +1703,14 @@ function WalkthroughView({prop,currentUser,onBack,onPropUpdate}){
   React.useEffect(()=>{
     const unsubData=dbListen(`projects/${prop.id}/data`,remote=>{
       dataRef.current=remote||{};
-      setData(buildMerged(dataRef.current,photosRef.current));
+      mergedRef.current=buildMerged(dataRef.current,photosRef.current);
+      setData(mergedRef.current);
       setSyncStatus('synced');
     });
     const unsubPhotos=dbListen(`projects/${prop.id}/photos`,remote=>{
       photosRef.current=remote||{};
-      setData(buildMerged(dataRef.current,photosRef.current));
+      mergedRef.current=buildMerged(dataRef.current,photosRef.current);
+      setData(mergedRef.current);
     });
     return ()=>{unsubData();unsubPhotos();};
   },[prop.id]);
@@ -1716,11 +1718,9 @@ function WalkthroughView({prop,currentUser,onBack,onPropUpdate}){
   async function updateItem(catId,itemId,value){
     setSyncStatus('syncing');
     const stamped={...value,updatedAt:Date.now(),updatedBy:username};
-    setData(prev=>{
-      const next={...prev,[catId]:{...(prev[catId]||{}),[itemId]:stamped}};
-      mergedRef.current=next;
-      return next;
-    });
+    // Update mergedRef synchronously so rapid successive calls see the latest state
+    mergedRef.current={...mergedRef.current,[catId]:{...(mergedRef.current[catId]||{}),[itemId]:stamped}};
+    setData(mergedRef.current);
     // Split: lightweight fields to /data, photos to /photos
     const{photosBefore,photosVision,...noPhotos}=stamped;
     const writes=[dbUpdate(`projects/${prop.id}/data/${catId}`,{[itemId]:noPhotos})];
