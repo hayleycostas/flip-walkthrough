@@ -1929,39 +1929,54 @@ function PropertyList({currentUser,onOpen}){
 
   if(loading)return<div className="spinner-page"><div className="spinner"/></div>;
 
+  const STAGES=[
+    {id:'renovation',label:'🔨 Renovation',sub:'Active projects under construction'},
+    {id:'contract',label:'📝 Under Contract',sub:'Deals signed, preparing to build'},
+    {id:'walkthrough',label:'🔍 Walkthrough',sub:'Scoping & estimating'},
+  ];
+
+  function PropCard({prop}){
+    return(
+      <div className="prop-card">
+        <div className="prop-card-body" onClick={()=>onOpen(prop)}>
+          <div className="prop-thumb">{prop.stage==='renovation'?'🔨':prop.stage==='contract'?'📝':'🔍'}</div>
+          <div className="prop-info">
+            <div className="prop-address">{prop.address}</div>
+            <div className="prop-meta">{prop.sqft?prop.sqft+' sq ft  ·  ':''}{prop.date?new Date(prop.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):''}</div>
+          </div>
+          <div className="prop-arrow">›</div>
+        </div>
+        <div className="prop-actions">
+          <button className="prop-action-btn" onClick={()=>onOpen(prop)}>✏️ Open</button>
+          {prop.ownerId===currentUser.uid&&<button className="prop-action-btn danger" onClick={()=>setDeleteId(prop.id)}>🗑 Delete</button>}
+        </div>
+      </div>
+    );
+  }
+
   return(
     <div className="list-page">
       <div className="list-header">
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-          <h1>🏚 Scope of Work</h1>
+          <h1>🏚 Zanco</h1>
           <button className="btn-header-sm" onClick={signOut}>Sign Out</button>
         </div>
         <p>Welcome back, {currentUser.displayName||currentUser.email}</p>
       </div>
       <div className="list-content">
-        {properties.length===0?(
+        {properties.length===0&&(
           <div className="empty-state"><div className="icon">🏠</div><h2>No properties yet</h2><p>Add your first property to get started</p></div>
-        ):properties.map(prop=>{
-          const{done,total,pct}=totalProgress({});
+        )}
+        {STAGES.map(s=>{
+          const group=properties.filter(p=>(p.stage||'walkthrough')===s.id);
+          if(group.length===0)return null;
           return(
-            <div key={prop.id} className="prop-card">
-              <div className="prop-card-body" onClick={()=>onOpen(prop)}>
-                <div className="prop-thumb">🏠</div>
-                <div className="prop-info">
-                  <div className="prop-address">{prop.address}</div>
-                  <div className="prop-meta">{prop.sqft?prop.sqft+' sq ft  ·  ':''}{prop.date?new Date(prop.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):''}</div>
-                  <span className={`stage-badge ${prop.stage||'walkthrough'}`}>{prop.stage==='contract'?'📝 Under Contract':prop.stage==='renovation'?'🔨 Renovation':'🔍 Walkthrough'}</span>
-                  <div className="prop-progress">
-                    <div className="prop-progress-bar"><div className="prop-progress-fill" style={{width:'0%'}}/></div>
-                    <span className="prop-progress-label">tap to view</span>
-                  </div>
-                </div>
-                <div className="prop-arrow">›</div>
+            <div key={s.id} style={{marginBottom:20}}>
+              <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:8,paddingLeft:2}}>
+                <span style={{fontSize:15,fontWeight:800,color:'#1a1a2e'}}>{s.label}</span>
+                <span style={{fontSize:12,color:'#aaa'}}>{s.sub}</span>
               </div>
-              <div className="prop-actions">
-                <button className="prop-action-btn" onClick={()=>onOpen(prop)}>✏️ Open</button>
-                {prop.ownerId===currentUser.uid&&<button className="prop-action-btn danger" onClick={()=>setDeleteId(prop.id)}>🗑 Delete</button>}
-              </div>
+              {group.map(prop=><PropCard key={prop.id} prop={prop}/>)}
             </div>
           );
         })}
@@ -1989,7 +2004,8 @@ function PropertyList({currentUser,onOpen}){
 // ── WalkthroughView ──────────────────────────────────────────────────
 function WalkthroughView({prop,currentUser,onBack,onPropUpdate}){
   const TAB_SUMMARY=-1,TAB_TEAM=-2,TAB_TASKS=-3,TAB_MGMT=-4;
-  const[activeTab,setActiveTab]=React.useState(TAB_SUMMARY);
+  const initStage=prop.stage||'walkthrough';
+  const[activeTab,setActiveTab]=React.useState(initStage==='contract'||initStage==='renovation'?TAB_MGMT:TAB_SUMMARY);
   const[data,setData]=React.useState({});
   const[members,setMembers]=React.useState({});
   const[stage,setStage]=React.useState(prop.stage||'walkthrough');
