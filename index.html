@@ -98,6 +98,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .status-btn { padding: 5px 12px; border-radius: 20px; border: 2px solid #e0e0e0; font-size: 12px; font-weight: 600; cursor: pointer; background: white; transition: all .15s; }
 .status-btn.sel-keep { border-color: #28a745; background: #d4edda; color: #155724; }
 .status-btn.sel-replace { border-color: #dc3545; background: #f8d7da; color: #721c24; }
+.status-btn.sel-maybe { border-color: #d4a017; background: #fff3cd; color: #856404; }
 
 .notes-label { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px; }
 .notes-input { width: 100%; border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 10px 12px; font-size: 14px; font-family: inherit; resize: vertical; min-height: 80px; color: #1a1a2e; transition: border-color .15s; }
@@ -125,6 +126,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .item-status-btn { padding:16px 8px; border-radius:14px; border:2px solid #dde; background:#f8f9fa; font-size:16px; font-weight:700; cursor:pointer; transition:all .15s; color:#444; }
 .item-status-btn.sel-keep { background:#d4edda; border-color:#28a745; color:#155724; }
 .item-status-btn.sel-replace { background:#f8d7da; border-color:#dc3545; color:#721c24; }
+.item-status-btn.sel-maybe { background:#fff3cd; border-color:#d4a017; color:#856404; }
 .item-dots-row { display:flex; justify-content:center; flex-wrap:wrap; gap:6px; padding:10px 16px 6px; }
 .item-dot { width:10px; height:10px; border-radius:50%; background:#dde; cursor:pointer; transition:all .15s; flex-shrink:0; }
 .item-dot.active { background:#0f3460; transform:scale(1.3); }
@@ -135,11 +137,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .item-overview-card:active { transform:scale(.97); }
 .item-overview-card.ov-keep { border-color:#28a745; background:#f0faf2; }
 .item-overview-card.ov-replace { border-color:#dc3545; background:#fff5f5; }
+.item-overview-card.ov-maybe { border-color:#d4a017; background:#fffbf0; }
 .item-overview-card.ov-notes { border-color:#aac4e8; background:#f0f4ff; }
 .item-ov-name { font-size:13px; font-weight:700; color:#1a1a2e; line-height:1.3; }
 .item-ov-badge { font-size:11px; font-weight:700; border-radius:20px; padding:2px 8px; align-self:flex-start; }
 .ov-keep .item-ov-badge { background:#d4edda; color:#155724; }
 .ov-replace .item-ov-badge { background:#f8d7da; color:#721c24; }
+.ov-maybe .item-ov-badge { background:#fff3cd; color:#856404; }
 .item-ov-note { font-size:11px; color:#888; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .mic-btn { width: 100%; padding: 13px; border-radius: 12px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 700; background: #f0f2f5; color: #444; transition: all .2s; }
 .mic-btn:hover { background: #e0e4eb; }
@@ -500,9 +504,9 @@ const CATEGORIES = [
   ]},
 ];
 
-const STATUSES      = [{id:'keep',label:'✓ Keep',cls:'keep'},{id:'replace',label:'↺ Replace',cls:'replace'}];
-const STATUS_LABELS = {keep:'✓ Keep',replace:'↺ Replace'};
-const STATUS_COLORS = {keep:'#d4edda',replace:'#f8d7da'};
+const STATUSES      = [{id:'keep',label:'✓ Keep',cls:'keep'},{id:'replace',label:'↺ Replace',cls:'replace'},{id:'maybe',label:'? Check',cls:'maybe'}];
+const STATUS_LABELS = {keep:'✓ Keep',replace:'↺ Replace',maybe:'? Check'};
+const STATUS_COLORS = {keep:'#d4edda',replace:'#f8d7da',maybe:'#fff3cd'};
 const AVATAR_COLORS = ['#0f3460','#e2b04a','#28a745','#dc3545','#6f42c1','#17a2b8','#fd7e14','#20c997'];
 
 function avatarColor(name){let h=0;for(let c of(name||'?'))h=c.charCodeAt(0)+((h<<5)-h);return AVATAR_COLORS[Math.abs(h)%AVATAR_COLORS.length];}
@@ -808,7 +812,7 @@ function ItemCardView({propId,cat,data,mergedRef,updateItem,setLightbox,username
         <div className="item-overview">
           {items.map((it,i)=>{
             const id=(data[cat.id]||{})[it.id]||{};
-            const cls=id.status==='keep'?'ov-keep':id.status==='replace'?'ov-replace':id.notes?'ov-notes':'';
+            const cls=id.status==='keep'?'ov-keep':id.status==='replace'?'ov-replace':id.status==='maybe'?'ov-maybe':id.notes?'ov-notes':'';
             return(
               <div key={it.id} className={`item-overview-card ${cls}`} onClick={()=>jumpTo(i)}>
                 <div className="item-ov-name">{it.label}</div>
