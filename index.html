@@ -634,7 +634,7 @@ function PhotoSlot({label,photos,onAdd,onAddBatch,onRemove,onView}){
 }
 
 // ── SectionCard ──────────────────────────────────────────────────────
-function SectionCard({propId,item,catId,data,onChange,onView,isOpen,onToggle,username}){
+function SectionCard({propId,item,catId,data,mergedRef,onChange,onView,isOpen,onToggle,username}){
   const d=data[item.id]||{};
   const hasNotif=d.updatedAt&&d.updatedBy&&d.updatedBy!==username&&d.updatedAt>getViewed(propId,catId,item.id);
   function handleToggle(){if(!isOpen)markViewed(propId,catId,item.id);onToggle();}
@@ -681,14 +681,14 @@ function SectionCard({propId,item,catId,data,onChange,onView,isOpen,onToggle,use
             <div className="notes-label" style={{marginBottom:8}}>Photos</div>
             <div className="photos-row">
               <PhotoSlot label="📸 Before / Existing" photos={d.photosBefore||[]}
-                onAdd={src=>onChange(item.id,{...d,photosBefore:[...(d.photosBefore||[]),src]})}
-                onAddBatch={srcs=>onChange(item.id,{...d,photosBefore:[...(d.photosBefore||[]),...srcs]})}
-                onRemove={i=>onChange(item.id,{...d,photosBefore:(d.photosBefore||[]).filter((_,idx)=>idx!==i)})}
+                onAdd={src=>{const cur=(mergedRef.current[catId]||{})[item.id]||{};onChange(item.id,{...cur,photosBefore:[...(cur.photosBefore||[]),src]});}}
+                onAddBatch={srcs=>{const cur=(mergedRef.current[catId]||{})[item.id]||{};onChange(item.id,{...cur,photosBefore:[...(cur.photosBefore||[]),...srcs]});}}
+                onRemove={i=>{const cur=(mergedRef.current[catId]||{})[item.id]||{};onChange(item.id,{...cur,photosBefore:(cur.photosBefore||[]).filter((_,idx)=>idx!==i)});}}
                 onView={onView}/>
               <PhotoSlot label="✨ Vision / Reference" photos={d.photosVision||[]}
-                onAdd={src=>onChange(item.id,{...d,photosVision:[...(d.photosVision||[]),src]})}
-                onAddBatch={srcs=>onChange(item.id,{...d,photosVision:[...(d.photosVision||[]),...srcs]})}
-                onRemove={i=>onChange(item.id,{...d,photosVision:(d.photosVision||[]).filter((_,idx)=>idx!==i)})}
+                onAdd={src=>{const cur=(mergedRef.current[catId]||{})[item.id]||{};onChange(item.id,{...cur,photosVision:[...(cur.photosVision||[]),src]});}}
+                onAddBatch={srcs=>{const cur=(mergedRef.current[catId]||{})[item.id]||{};onChange(item.id,{...cur,photosVision:[...(cur.photosVision||[]),...srcs]});}}
+                onRemove={i=>{const cur=(mergedRef.current[catId]||{})[item.id]||{};onChange(item.id,{...cur,photosVision:(cur.photosVision||[]).filter((_,idx)=>idx!==i)});}}
                 onView={onView}/>
             </div>
           </div>
@@ -698,12 +698,12 @@ function SectionCard({propId,item,catId,data,onChange,onView,isOpen,onToggle,use
   );
 }
 
-function AccordionList({propId,cat,data,updateItem,setLightbox,username}){
+function AccordionList({propId,cat,data,mergedRef,updateItem,setLightbox,username}){
   const[openId,setOpenId]=React.useState(null);
   React.useEffect(()=>{setOpenId(null);},[cat.id]);
   return cat.items.map(item=>(
     <SectionCard key={item.id} propId={propId} item={item} catId={cat.id}
-      data={data[cat.id]||{}} username={username}
+      data={data[cat.id]||{}} mergedRef={mergedRef} username={username}
       isOpen={openId===item.id}
       onToggle={()=>setOpenId(id=>id===item.id?null:item.id)}
       onChange={(itemId,val)=>updateItem(cat.id,itemId,val)}
@@ -1680,6 +1680,7 @@ function WalkthroughView({prop,currentUser,onBack,onPropUpdate}){
   // Merge remote data+photos into a single state object
   const photosRef=React.useRef({});
   const dataRef=React.useRef({});
+  const mergedRef=React.useRef({});
 
   function buildMerged(d,p){
     const merged={...d};
@@ -1775,6 +1776,7 @@ function WalkthroughView({prop,currentUser,onBack,onPropUpdate}){
     onPropUpdate(updated);
   }
 
+  mergedRef.current=data;
   const cat=activeTab>=0?CATEGORIES[activeTab]:null;
   const{done,total,pct}=totalProgress(data);
   const sumFilled=!!(data._summary?.overview||data._summary?.priorities?.filter(Boolean).length||data._summary?.budget);
@@ -1847,7 +1849,7 @@ function WalkthroughView({prop,currentUser,onBack,onPropUpdate}){
       {activeTab>=0&&cat&&(
         <Swipeable onLeft={()=>setActiveTab(t=>Math.min(t+1,CATEGORIES.length-1))} onRight={()=>setActiveTab(t=>t<=0?TAB_SUMMARY:t-1)}>
           <div className="content">
-            <AccordionList propId={prop.id} cat={cat} data={data} username={username} updateItem={updateItem} setLightbox={setLightbox}/>
+            <AccordionList propId={prop.id} cat={cat} data={data} mergedRef={mergedRef} username={username} updateItem={updateItem} setLightbox={setLightbox}/>
           </div>
         </Swipeable>
       )}
