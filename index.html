@@ -2174,6 +2174,11 @@ function WalkthroughView({prop,currentUser,onBack,onPropUpdate}){
           {syncStatus==='syncing'?'Syncing…':'All changes saved · Live sync on'}
         </div>
         <div className="tabs">
+          {(stage==='contract'||stage==='renovation')&&(
+            <div className={`tab${activeTab===TAB_MGMT?' active':''}`} onClick={()=>setActiveTab(TAB_MGMT)}>
+              🏗 Project
+            </div>
+          )}
           <div className={`tab${activeTab===TAB_SUMMARY?' active':''}`} onClick={()=>setActiveTab(TAB_SUMMARY)}>
             📋 Summary{sumFilled&&<span className="tab-count">✓</span>}
           </div>
@@ -2193,11 +2198,6 @@ function WalkthroughView({prop,currentUser,onBack,onPropUpdate}){
           <div className={`tab${activeTab===TAB_TASKS?' active':''}`} onClick={()=>setActiveTab(TAB_TASKS)}>
             ✅ Tasks
           </div>
-          {(stage==='contract'||stage==='renovation')&&(
-            <div className={`tab${activeTab===TAB_MGMT?' active':''}`} onClick={()=>setActiveTab(TAB_MGMT)}>
-              🏗 Project
-            </div>
-          )}
         </div>
       </div>
 
