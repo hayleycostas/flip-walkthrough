@@ -555,31 +555,39 @@ function PhotoSlot({label,photos,onAdd,onAddBatch,onRemove,onView}){
   const fileRef=React.useRef();
   const camRef=React.useRef();
   const startX=React.useRef(null);
+  const pendingFiles=React.useRef([]);
+  const pendingTimer=React.useRef(null);
   const has=photos&&photos.length>0;
   const safeIdx=has?Math.min(idx,photos.length-1):0;
 
   React.useEffect(()=>{if(has)setIdx(photos.length-1);},[photos.length]);
 
-  async function handleFiles(e){
-    const files=Array.from(e.target.files||[]);
-    if(!files.length)return;
-    setUploading({done:0,total:files.length});
-    const results=[];
-    for(let i=0;i<files.length;i++){
-      const src=await new Promise((res,rej)=>{
-        const r=new FileReader();
-        r.onload=async ev=>{try{res(await compressImage(ev.target.result));}catch(err){rej(err);}};
-        r.onerror=rej;
-        r.readAsDataURL(files[i]);
-      });
-      results.push(src);
-      setUploading({done:i+1,total:files.length});
-    }
+  function handleFiles(e){
+    const newFiles=Array.from(e.target.files||[]);
     e.target.value='';
-    setUploading(null);
-    if(results.length===1){onAdd(results[0]);}
-    else if(onAddBatch){onAddBatch(results);}
-    else{results.forEach(src=>onAdd(src));}
+    if(!newFiles.length)return;
+    pendingFiles.current.push(...newFiles);
+    clearTimeout(pendingTimer.current);
+    pendingTimer.current=setTimeout(async()=>{
+      const files=pendingFiles.current.splice(0);
+      if(!files.length)return;
+      setUploading({done:0,total:files.length});
+      const results=[];
+      for(let i=0;i<files.length;i++){
+        const src=await new Promise((res,rej)=>{
+          const r=new FileReader();
+          r.onload=async ev=>{try{res(await compressImage(ev.target.result));}catch(err){rej(err);}};
+          r.onerror=rej;
+          r.readAsDataURL(files[i]);
+        });
+        results.push(src);
+        setUploading({done:i+1,total:files.length});
+      }
+      setUploading(null);
+      if(results.length===1&&onAdd){onAdd(results[0]);}
+      else if(onAddBatch){onAddBatch(results);}
+      else{results.forEach(src=>onAdd&&onAdd(src));}
+    },80);
   }
 
   function onTouchStart(e){startX.current=e.touches[0].clientX;}
