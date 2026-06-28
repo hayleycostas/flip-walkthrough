@@ -1061,6 +1061,9 @@ function MigrationModal({currentUser,onDone}){
   let oldProps=[];
   try{oldProps=JSON.parse(localStorage.getItem('flip_properties')||'[]');}catch{}
 
+  // Firebase rejects undefined values — strip them by round-tripping through JSON
+  const clean=obj=>JSON.parse(JSON.stringify(obj,(_,v)=>v===undefined?null:v));
+
   async function migrate(){
     setMigrating(true);setErr('');
     const myUid=currentUser.uid;
@@ -1082,10 +1085,10 @@ function MigrationModal({currentUser,onDone}){
         }
         // Write all paths for this property in parallel
         await Promise.all([
-          dbSet(`projects/${prop.id}/meta`,{...prop,ownerId:myUid,ownerName:currentUser.displayName||currentUser.email,updatedAt:now}),
-          dbSet(`projects/${prop.id}/members/${myUid}`,{name:currentUser.displayName||currentUser.email,email:currentUser.email,role:'owner',addedAt:now}),
+          dbSet(`projects/${prop.id}/meta`,clean({...prop,ownerId:myUid,ownerName:currentUser.displayName||currentUser.email,updatedAt:now})),
+          dbSet(`projects/${prop.id}/members/${myUid}`,clean({name:currentUser.displayName||currentUser.email,email:currentUser.email,role:'owner',addedAt:now})),
           dbSet(`userProjects/${myUid}/${prop.id}`,true),
-          Object.keys(lightweight).length ? dbSet(`projects/${prop.id}/data`,lightweight) : Promise.resolve(),
+          Object.keys(lightweight).length ? dbSet(`projects/${prop.id}/data`,clean(lightweight)) : Promise.resolve(),
         ]);
       }
       setProgress('');
