@@ -271,6 +271,23 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .role-pill { background: #f0f0f0; border: 1.5px solid transparent; border-radius: 20px; padding: 7px 14px; font-size: 13px; font-weight: 600; color: #555; cursor: pointer; transition: all .15s; }
 .role-pill.active { background: #e8f0fb; border-color: #0f3460; color: #0f3460; }
 .project-select { width: 100%; border: 1.5px solid #e0e0e0; border-radius: 10px; padding: 11px 13px; font-size: 14px; font-family: inherit; color: #1a1a2e; background: white; margin-bottom: 12px; }
+/* Team roster */
+.roster-member { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
+.roster-member:last-child { border-bottom: none; }
+.roster-avatar { width: 36px; height: 36px; border-radius: 50%; background: #e8f0fb; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: #0f3460; flex-shrink: 0; }
+.roster-info { flex: 1; min-width: 0; }
+.roster-name { font-size: 14px; font-weight: 600; color: #1a1a2e; }
+.roster-sub { font-size: 12px; color: #888; }
+.roster-role-badge { font-size: 11px; font-weight: 700; background: #e8f0fb; color: #0f3460; border-radius: 20px; padding: 3px 9px; white-space: nowrap; }
+.roster-remove { background: none; border: none; color: #ccc; font-size: 18px; cursor: pointer; padding: 4px; }
+.roster-remove:hover { color: #dc3545; }
+.roster-check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #ddd; background: white; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all .15s; }
+.roster-check.checked { background: #0f3460; border-color: #0f3460; color: white; }
+.assign-notify-btn { width: 100%; background: #0f3460; color: white; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 6px; }
+.assign-notify-btn:disabled { opacity: .5; }
+.step-indicator { display: flex; align-items: center; gap: 6px; margin-bottom: 16px; }
+.step-dot { width: 8px; height: 8px; border-radius: 50%; background: #ddd; }
+.step-dot.active { background: #0f3460; }
 .invite-sent { background: #f0f8f0; border: 1px solid #c3e6cb; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #155724; margin-bottom: 6px; }
 
 /* Sync bar */
@@ -1047,35 +1064,175 @@ function ShareModal({prop,data,onClose}){
 }
 
 // ── Add Property Modal ───────────────────────────────────────────────
-function AddPropertyModal({onAdd,onClose}){
+// ── Team Roster Modal ────────────────────────────────────────────────
+function TeamModal({currentUser,onClose}){
+  const[roster,setRoster]=React.useState(null);
+  const[showAdd,setShowAdd]=React.useState(false);
+  const[name,setName]=React.useState('');
+  const[email,setEmail]=React.useState('');
+  const[phone,setPhone]=React.useState('');
+  const[role,setRole]=React.useState('Member');
+
+  React.useEffect(()=>{
+    return dbListen(`roster/${currentUser.uid}`,data=>setRoster(data||{}));
+  },[currentUser.uid]);
+
+  async function addMember(){
+    if(!name.trim()||!email.trim())return;
+    const id=uid();
+    await dbSet(`roster/${currentUser.uid}/${id}`,{id,name:name.trim(),email:email.trim(),phone:phone.trim(),role,addedAt:Date.now()});
+    setName('');setEmail('');setPhone('');setRole('Member');setShowAdd(false);
+  }
+
+  async function removeMember(id){
+    await dbRemove(`roster/${currentUser.uid}/${id}`);
+  }
+
+  const members=Object.values(roster||{}).sort((a,b)=>a.name.localeCompare(b.name));
+
+  return(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <h2>👥 My Team</h2>
+        {members.length===0&&!showAdd&&<p style={{color:'#aaa',fontSize:13}}>No team members saved yet. Add people you work with regularly.</p>}
+        {members.map(m=>(
+          <div key={m.id} className="roster-member">
+            <div className="roster-avatar">{m.name[0].toUpperCase()}</div>
+            <div className="roster-info">
+              <div className="roster-name">{m.name}</div>
+              <div className="roster-sub">{m.email}{m.phone?' · '+m.phone:''}</div>
+            </div>
+            <span className="roster-role-badge">{m.role}</span>
+            <button className="roster-remove" onClick={()=>removeMember(m.id)}>×</button>
+          </div>
+        ))}
+
+        {showAdd?(
+          <div style={{marginTop:12,padding:'14px',background:'#f8f9fa',borderRadius:10}}>
+            <div className="role-pills" style={{marginBottom:10}}>
+              {INVITE_ROLES.map(r=><button key={r} className={`role-pill${role===r?' active':''}`} onClick={()=>setRole(r)}>{r}</button>)}
+            </div>
+            <div className="modal-field"><label>Name *</label><input autoFocus placeholder="Jane Smith" value={name} onChange={e=>setName(e.target.value)}/></div>
+            <div className="modal-field"><label>Email *</label><input type="email" placeholder="jane@example.com" value={email} onChange={e=>setEmail(e.target.value)}/></div>
+            <div className="modal-field"><label>Phone (optional)</label><input type="tel" placeholder="+1 (555) 000-0000" value={phone} onChange={e=>setPhone(e.target.value)}/></div>
+            <div className="modal-btns" style={{marginTop:8}}>
+              <button className="btn-primary" onClick={addMember}>Save</button>
+              <button className="btn-secondary" onClick={()=>setShowAdd(false)}>Cancel</button>
+            </div>
+          </div>
+        ):(
+          <button className="btn-add-prop" style={{marginTop:14}} onClick={()=>setShowAdd(true)}>＋ Add Team Member</button>
+        )}
+
+        <div className="modal-btns" style={{marginTop:16}}>
+          <button className="btn-secondary" onClick={onClose}>Done</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Add Property Modal (2-step: details → assign team) ───────────────
+function AddPropertyModal({onAdd,currentUser,onClose}){
+  const[step,setStep]=React.useState(1);
   const[address,setAddress]=React.useState('');
   const[sqft,setSqft]=React.useState('');
   const[date,setDate]=React.useState(new Date().toISOString().split('T')[0]);
   const[curBed,setCurBed]=React.useState('');const[curBath,setCurBath]=React.useState('');
   const[futBed,setFutBed]=React.useState('');const[futBath,setFutBath]=React.useState('');
-  function submit(){if(!address.trim())return;onAdd({id:uid(),address:address.trim(),sqft:sqft.trim(),date,curBed,curBath,futBed,futBath,createdAt:Date.now()});}
+  const[roster,setRoster]=React.useState({});
+  const[selected,setSelected]=React.useState({});// id→true
+  const[notified,setNotified]=React.useState(false);
+
+  React.useEffect(()=>{
+    return dbListen(`roster/${currentUser.uid}`,data=>setRoster(data||{}));
+  },[currentUser.uid]);
+
+  function goToStep2(){if(!address.trim())return;setStep(2);}
+
+  function toggle(id){setSelected(s=>s[id]?{...s,[id]:undefined}:{...s,[id]:true});}
+
+  async function finish(){
+    const prop={id:uid(),address:address.trim(),sqft:sqft.trim(),date,curBed,curBath,futBed,futBath,createdAt:Date.now()};
+    const assignedMembers=Object.entries(selected).filter(([,v])=>v).map(([id])=>roster[id]).filter(Boolean);
+
+    // Notify via email — one mailto with all recipients
+    if(assignedMembers.length>0&&!notified){
+      const emails=assignedMembers.map(m=>m.email).join(',');
+      const subject=`You've been assigned to ${prop.address} on Zanco`;
+      const body=`Hi,\n\nYou've been assigned to a new Flip Walkthrough project: ${prop.address}.\n\nLog in to Zanco to view it: ${window.location.origin}${window.location.pathname}\n\nSee you on Zanco!`;
+      window.open(`mailto:${emails}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,'_self');
+      setNotified(true);
+    }
+
+    // Write assigned members to the project
+    await Promise.all(assignedMembers.map(m=>
+      dbSet(`projects/${prop.id}/members/${m.id}`,{name:m.name,email:m.email,role:m.role,addedAt:Date.now()})
+    ));
+    onAdd(prop);
+  }
+
+  const members=Object.values(roster).sort((a,b)=>a.name.localeCompare(b.name));
+  const numSelected=Object.values(selected).filter(Boolean).length;
+
   return(
     <div className="modal-overlay" onClick={onClose}><div className="modal" onClick={e=>e.stopPropagation()}>
-      <h2>Add Property</h2><p>Enter the property details to start a new walkthrough.</p>
-      <div className="modal-field"><label>Property Address *</label><input autoFocus placeholder="123 Main St, City, ST" value={address} onChange={e=>setAddress(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submit()}/></div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-        <div className="modal-field"><label>Total Sq Ft</label><input placeholder="e.g. 1,800" value={sqft} onChange={e=>setSqft(e.target.value)}/></div>
-        <div className="modal-field"><label>Date</label><input type="date" value={date} onChange={e=>setDate(e.target.value)}/></div>
+      <div className="step-indicator">
+        <div className={`step-dot${step===1?' active':''}`}/>
+        <div className={`step-dot${step===2?' active':''}`}/>
       </div>
-      <div style={{fontSize:11,fontWeight:700,color:'#888',textTransform:'uppercase',letterSpacing:'.5px',margin:'8px 0 4px'}}>Current Layout</div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-        <div className="modal-field"><label>Bedrooms</label><input type="number" min="0" placeholder="3" value={curBed} onChange={e=>setCurBed(e.target.value)}/></div>
-        <div className="modal-field"><label>Bathrooms</label><input type="number" min="0" placeholder="1" value={curBath} onChange={e=>setCurBath(e.target.value)}/></div>
-      </div>
-      <div style={{fontSize:11,fontWeight:700,color:'#888',textTransform:'uppercase',letterSpacing:'.5px',margin:'8px 0 4px'}}>Future Layout</div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-        <div className="modal-field"><label>Bedrooms</label><input type="number" min="0" placeholder="4" value={futBed} onChange={e=>setFutBed(e.target.value)}/></div>
-        <div className="modal-field"><label>Bathrooms</label><input type="number" min="0" placeholder="2" value={futBath} onChange={e=>setFutBath(e.target.value)}/></div>
-      </div>
-      <div className="modal-btns">
-        <button className="btn-primary" onClick={submit}>Add Property</button>
-        <button className="btn-secondary" onClick={onClose}>Cancel</button>
-      </div>
+
+      {step===1?(
+        <>
+          <h2>Add Property</h2><p>Enter the property details to start a new walkthrough.</p>
+          <div className="modal-field"><label>Property Address *</label><input autoFocus placeholder="123 Main St, City, ST" value={address} onChange={e=>setAddress(e.target.value)} onKeyDown={e=>e.key==='Enter'&&goToStep2()}/></div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            <div className="modal-field"><label>Total Sq Ft</label><input placeholder="e.g. 1,800" value={sqft} onChange={e=>setSqft(e.target.value)}/></div>
+            <div className="modal-field"><label>Date</label><input type="date" value={date} onChange={e=>setDate(e.target.value)}/></div>
+          </div>
+          <div style={{fontSize:11,fontWeight:700,color:'#888',textTransform:'uppercase',letterSpacing:'.5px',margin:'8px 0 4px'}}>Current Layout</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            <div className="modal-field"><label>Bedrooms</label><input type="number" min="0" placeholder="3" value={curBed} onChange={e=>setCurBed(e.target.value)}/></div>
+            <div className="modal-field"><label>Bathrooms</label><input type="number" min="0" placeholder="1" value={curBath} onChange={e=>setCurBath(e.target.value)}/></div>
+          </div>
+          <div style={{fontSize:11,fontWeight:700,color:'#888',textTransform:'uppercase',letterSpacing:'.5px',margin:'8px 0 4px'}}>Future Layout</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            <div className="modal-field"><label>Bedrooms</label><input type="number" min="0" placeholder="4" value={futBed} onChange={e=>setFutBed(e.target.value)}/></div>
+            <div className="modal-field"><label>Bathrooms</label><input type="number" min="0" placeholder="2" value={futBath} onChange={e=>setFutBath(e.target.value)}/></div>
+          </div>
+          <div className="modal-btns">
+            <button className="btn-primary" onClick={goToStep2}>Next: Assign Team →</button>
+            <button className="btn-secondary" onClick={onClose}>Cancel</button>
+          </div>
+        </>
+      ):(
+        <>
+          <h2>Assign Team</h2>
+          <p style={{fontSize:13,color:'#888',marginBottom:14}}>Pick team members to add to <strong>{address}</strong>. They'll get an email notification.</p>
+          {members.length===0?(
+            <p style={{color:'#aaa',fontSize:13,textAlign:'center',padding:'20px 0'}}>No saved team members yet.<br/>Add people via 👥 My Team on the home screen.</p>
+          ):members.map(m=>{
+            const isChecked=!!selected[m.id];
+            return(
+              <div key={m.id} className="roster-member" style={{cursor:'pointer'}} onClick={()=>toggle(m.id)}>
+                <div className={`roster-check${isChecked?' checked':''}`}>{isChecked?'✓':''}</div>
+                <div className="roster-avatar">{m.name[0].toUpperCase()}</div>
+                <div className="roster-info">
+                  <div className="roster-name">{m.name}</div>
+                  <div className="roster-sub">{m.email}</div>
+                </div>
+                <span className="roster-role-badge">{m.role}</span>
+              </div>
+            );
+          })}
+          <div className="modal-btns" style={{marginTop:16}}>
+            <button className="assign-notify-btn" onClick={finish}>
+              {numSelected>0?`Add Property & Notify ${numSelected} Member${numSelected>1?'s':''}  ✉️`:'Add Property (No Team)'}
+            </button>
+            <button className="btn-secondary" onClick={()=>setStep(1)}>← Back</button>
+          </div>
+        </>
+      )}
     </div></div>
   );
 }
@@ -1159,6 +1316,7 @@ function PropertyList({currentUser,onOpen}){
   const[loading,setLoading]=React.useState(true);
   const[showAdd,setShowAdd]=React.useState(false);
   const[showInvite,setShowInvite]=React.useState(false);
+  const[showTeam,setShowTeam]=React.useState(false);
   const[deleteId,setDeleteId]=React.useState(null);
   const[showMigration,setShowMigration]=React.useState(false);
 
@@ -1239,9 +1397,11 @@ function PropertyList({currentUser,onOpen}){
           );
         })}
         <button className="btn-add-prop" onClick={()=>setShowAdd(true)}>＋ Add Property</button>
-        <button className="btn-add-prop" style={{background:'#f4f7fb',color:'#0f3460',border:'1.5px solid #d0dff5',marginTop:10}} onClick={()=>setShowInvite(true)}>👥 Invite Team Member</button>
+        <button className="btn-add-prop" style={{background:'#f4f7fb',color:'#0f3460',border:'1.5px solid #d0dff5',marginTop:10}} onClick={()=>setShowTeam(true)}>👥 My Team</button>
+        <button className="btn-add-prop" style={{background:'#f4f7fb',color:'#555',border:'1.5px solid #e0e0e0',marginTop:10}} onClick={()=>setShowInvite(true)}>📲 Invite to Project</button>
       </div>
-      {showAdd&&<AddPropertyModal onAdd={addProperty} onClose={()=>setShowAdd(false)}/>}
+      {showAdd&&<AddPropertyModal onAdd={addProperty} currentUser={currentUser} onClose={()=>setShowAdd(false)}/>}
+      {showTeam&&<TeamModal currentUser={currentUser} onClose={()=>setShowTeam(false)}/>}
       {showInvite&&<InviteModal properties={properties} currentUser={currentUser} onClose={()=>setShowInvite(false)}/>}
       {showMigration&&<MigrationModal currentUser={currentUser} onDone={()=>setShowMigration(false)}/>}
       {deleteId&&(
