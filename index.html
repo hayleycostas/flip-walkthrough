@@ -1930,9 +1930,9 @@ function PropertyList({currentUser,onOpen}){
   if(loading)return<div className="spinner-page"><div className="spinner"/></div>;
 
   const STAGES=[
-    {id:'renovation',label:'🔨 Renovation',sub:'Active projects under construction'},
-    {id:'contract',label:'📝 Under Contract',sub:'Deals signed, preparing to build'},
     {id:'walkthrough',label:'🔍 Walkthrough',sub:'Scoping & estimating'},
+    {id:'contract',label:'📝 Under Contract',sub:'Deals signed, preparing to build'},
+    {id:'renovation',label:'🔨 Renovation',sub:'Active projects under construction'},
   ];
 
   function PropCard({prop}){
