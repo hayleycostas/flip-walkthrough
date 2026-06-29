@@ -1131,13 +1131,13 @@ function VideoAnalyzer({onApply,onClose,isOwner}){
 }
 
 // ── SummaryPage ──────────────────────────────────────────────────────
-function SummaryPage({summary,onChange,onView,propId,currentUser,onApplyAI,isOwner,members}){
+function SummaryPage({summary,onChange,onView,propId,address,currentUser,onApplyAI,isOwner,members}){
   const s=summary||{};
   const[showAI,setShowAI]=React.useState(false);
   function upd(i,val){const l=[...(s.priorities||[])];l[i]=val;onChange({...s,priorities:l});}
   return(
     <div className="summary-page">
-      <TasksPage propId={propId} currentUser={currentUser} members={members} inline={true}/>
+      <TasksPage propId={propId} address={address} currentUser={currentUser} members={members} inline={true}/>
       <button className="ai-analyze-btn" onClick={()=>setShowAI(true)}>✨ Auto-fill Scope from Video</button>
       {showAI&&<VideoAnalyzer onApply={onApplyAI} onClose={()=>setShowAI(false)} isOwner={isOwner}/>}
       <div className="summary-card">
@@ -1455,7 +1455,7 @@ function InviteModal({prop,properties,currentUser,onClose}){
 
 // ── ParticipantsPage ─────────────────────────────────────────────────
 // ── TasksPage ─────────────────────────────────────────────────────────
-function TasksPage({propId,currentUser,members,inline}){
+function TasksPage({propId,address,currentUser,members,inline}){
   const[tasks,setTasks]=React.useState({});
   const[newTitle,setNewTitle]=React.useState('');
   const[filter,setFilter]=React.useState('all');
@@ -1475,6 +1475,20 @@ function TasksPage({propId,currentUser,members,inline}){
 
   async function updateTask(id,patch){
     await dbUpdate(`projects/${propId}/tasks/${id}`,{...patch,updatedAt:Date.now(),updatedBy:username});
+  }
+
+  async function notifyAssignment(assigneeName, taskTitle, address){
+    // Find the uid for this member so we can look up their FCM token server-side
+    const entry = Object.entries(members||{}).find(([,m])=>m.name===assigneeName);
+    if(!entry) return;
+    const [assigneeUid] = entry;
+    try {
+      await fetch('/.netlify/functions/notify-assignment',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({assigneeUid, taskTitle, address, assignerName:username}),
+      });
+    } catch(e){ console.warn('notify failed:',e); }
   }
 
   async function deleteTask(id){await dbRemove(`projects/${propId}/tasks/${id}`);}
@@ -1598,7 +1612,11 @@ function TasksPage({propId,currentUser,members,inline}){
                 )}
                 <div className="task-actions">
                   <select className="task-assign-select" value={task.assignedTo||''}
-                    onChange={e=>updateTask(task.id,{assignedTo:e.target.value})}>
+                    onChange={e=>{
+                      const name=e.target.value;
+                      updateTask(task.id,{assignedTo:name});
+                      if(name) notifyAssignment(name, task.title, address||'');
+                    }}>
                     <option value="">Unassigned</option>
                     {memberNames.map(n=><option key={n} value={n}>{n}</option>)}
                     {task.assignedTo&&!memberNames.includes(task.assignedTo)&&<option value={task.assignedTo}>{task.assignedTo}</option>}
@@ -2321,9 +2339,9 @@ function WalkthroughView({prop,currentUser,onBack,onPropUpdate}){
         </div>
       )}
 
-      {activeTab===TAB_SUMMARY&&<SummaryPage summary={data._summary} onChange={updateSummary} onView={src=>setLightbox(src)} propId={prop.id} currentUser={currentUser} onApplyAI={applyAIScope} isOwner={isOwner} members={members}/>}
+      {activeTab===TAB_SUMMARY&&<SummaryPage summary={data._summary} onChange={updateSummary} onView={src=>setLightbox(src)} propId={prop.id} address={prop.address} currentUser={currentUser} onApplyAI={applyAIScope} isOwner={isOwner} members={members}/>}
       {activeTab===TAB_TEAM&&<ParticipantsPage prop={prop} data={data} currentUser={currentUser} isOwner={isOwner}/>}
-      {activeTab===TAB_TASKS&&<TasksPage propId={prop.id} currentUser={currentUser} members={members}/>}
+      {activeTab===TAB_TASKS&&<TasksPage propId={prop.id} address={prop.address} currentUser={currentUser} members={members}/>}
       {activeTab===TAB_MGMT&&(
         <div className="content">
           <div style={{padding:'12px 0 4px'}}>
@@ -2331,7 +2349,7 @@ function WalkthroughView({prop,currentUser,onBack,onPropUpdate}){
               {stage==='contract'?'📝 Under Contract — Project Management':'🔨 Ongoing Renovation — Project Management'}
             </div>
           </div>
-          <TasksPage propId={prop.id} currentUser={currentUser} members={members}/>
+          <TasksPage propId={prop.id} address={prop.address} currentUser={currentUser} members={members}/>
         </div>
       )}
       {activeTab>=0&&cat&&(
