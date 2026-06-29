@@ -1646,28 +1646,7 @@ function TasksPage({propId,address,currentUser,members,inline}){
                   </div>
                 )}
 
-                {/* Assign — button chips */}
-                {memberList.length>0&&(
-                  <div style={{marginTop:12}}>
-                    <div style={{fontSize:11,fontWeight:700,color:'#888',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:6}}>Assign to</div>
-                    <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
-                      {memberList.map(m=>{
-                        const on=task.assignedTo===m.name;
-                        return(
-                          <button key={m.name} onClick={()=>{
-                            const newVal=on?'':m.name;
-                            updateTask(task.id,{assignedTo:newVal});
-                            if(newVal) notifyAssignment(newVal,task.title,address||'');
-                          }} style={{border:'2px solid',borderColor:on?'#0f3460':'#dde',borderRadius:20,padding:'5px 12px',fontSize:12,fontWeight:700,background:on?'#0f3460':'white',color:on?'white':'#666',cursor:'pointer',transition:'all .15s'}}>
-                            {on?'✓ ':''}{m.name}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Tag — dropdown + chips */}
+                {/* Tag — dropdown + chips (shown first) */}
                 {memberList.length>0&&(
                   <div style={{marginTop:12}}>
                     <div style={{fontSize:11,fontWeight:700,color:'#888',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:6}}>@ Tag for attention</div>
@@ -1687,6 +1666,27 @@ function TasksPage({propId,address,currentUser,members,inline}){
                         ))}
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Assign — button chips (shown second) */}
+                {memberList.length>0&&(
+                  <div style={{marginTop:12}}>
+                    <div style={{fontSize:11,fontWeight:700,color:'#888',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:6}}>Assign to</div>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                      {memberList.map(m=>{
+                        const on=task.assignedTo===m.name;
+                        return(
+                          <button key={m.name} onClick={()=>{
+                            const newVal=on?'':m.name;
+                            updateTask(task.id,{assignedTo:newVal});
+                            if(newVal) notifyAssignment(newVal,task.title,address||'');
+                          }} style={{border:'2px solid',borderColor:on?'#0f3460':'#dde',borderRadius:20,padding:'5px 12px',fontSize:12,fontWeight:700,background:on?'#0f3460':'white',color:on?'white':'#666',cursor:'pointer',transition:'all .15s'}}>
+                            {on?'✓ ':''}{m.name}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 
