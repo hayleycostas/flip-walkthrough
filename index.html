@@ -2142,7 +2142,14 @@ function TaskEditDrawer({task, propId, address, currentUser, onClose}){
       <div className="task-drawer" onClick={e=>e.stopPropagation()}>
         <div className="task-drawer-handle"/>
         <div className="task-drawer-header">
-          <div className="task-drawer-prop">📍 {address}</div>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6}}>
+            <div className="task-drawer-prop">📍 {address}</div>
+            <button
+              onClick={()=>save({urgent:!t.urgent})||setT(p=>({...p,urgent:!p.urgent}))}
+              style={{display:'flex',alignItems:'center',gap:5,padding:'5px 12px',borderRadius:20,border:'2px solid',borderColor:t.urgent?'#dc3545':'#dde',background:t.urgent?'#dc3545':'white',color:t.urgent?'white':'#aaa',fontWeight:700,fontSize:12,cursor:'pointer',transition:'all .15s'}}>
+              ! {t.urgent?'Urgent':'Mark Urgent'}
+            </button>
+          </div>
           <input
             className="task-title-input"
             style={{fontSize:17,fontWeight:700,width:'100%',border:'none',outline:'none',padding:0,background:'transparent',color:'#1a1a2e'}}
