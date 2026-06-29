@@ -38,10 +38,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .stage-section-contract { background: #0d3d38; }
 .stage-section-renovation { background: #1a3a12; }
 .stage-section-header { display: flex; align-items: center; gap: 12px; padding: 16px 16px 12px; }
-.stage-section-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-.stage-section-walkthrough .stage-section-icon { background: rgba(255,255,255,.08); }
-.stage-section-contract .stage-section-icon { background: rgba(255,255,255,.08); }
-.stage-section-renovation .stage-section-icon { background: rgba(255,255,255,.08); }
+.stage-section-icon { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.stage-section-walkthrough .stage-section-icon { background: rgba(91,141,217,.25); }
+.stage-section-contract .stage-section-icon { background: rgba(91,191,181,.25); }
+.stage-section-renovation .stage-section-icon { background: rgba(122,172,94,.25); }
 .stage-section-info { flex: 1; }
 .stage-section-info h2 { font-size: 16px; font-weight: 800; color: white; margin: 0; }
 .stage-section-info p { font-size: 11px; color: rgba(255,255,255,.45); margin: 2px 0 0; }
@@ -101,14 +101,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .btn-share { background: #e2b04a; color: #1a1a2e; border: none; border-radius: 8px; padding: 7px 12px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 .btn-share:hover { background: #d4a03a; }
 
-.sqft-bar { background: #0f3460; padding: 8px 16px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.sqft-field { display: flex; align-items: center; gap: 6px; }
-.sqft-field label { font-size: 10px; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }
-.sqft-field input { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15); border-radius: 6px; padding: 4px 8px; color: white; font-size: 13px; width: 70px; }
-.sqft-field input::placeholder { color: rgba(255,255,255,.3); }
-.sqft-field input:focus { outline: none; border-color: #e2b04a; }
-.sqft-divider { width: 1px; height: 28px; background: rgba(255,255,255,.15); flex-shrink: 0; }
-.sqft-group-label { font-size: 9px; color: rgba(255,255,255,.35); text-transform: uppercase; letter-spacing: .7px; }
+.sqft-bar { background: #16213e; padding: 14px; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sqft-field { display: flex; flex-direction: column; gap: 4px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 10px 12px; }
+.sqft-field-icon { display: flex; align-items: center; gap: 6px; }
+.sqft-field-icon svg { opacity: .5; flex-shrink: 0; }
+.sqft-field label { font-size: 10px; color: rgba(255,255,255,.45); text-transform: uppercase; letter-spacing: .7px; font-weight: 600; }
+.sqft-field input { background: transparent; border: none; color: white; font-size: 18px; font-weight: 700; padding: 0; width: 100%; }
+.sqft-field input::placeholder { color: rgba(255,255,255,.2); }
+.sqft-field input:focus { outline: none; }
+.sqft-divider { display: none; }
+.sqft-group-label { display: none; }
 
 .tabs { display: flex; overflow-x: auto; padding: 0 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .tabs::-webkit-scrollbar { display: none; }
@@ -241,25 +243,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .progress-fill { background: linear-gradient(90deg, #0f3460, #e2b04a); border-radius: 100px; height: 8px; transition: width .4s; }
 
 /* ── Project stage ── */
-.stage-bar { display:flex; gap:6px; padding:8px 12px 4px; overflow-x:auto; }
-.stage-pill { border:2px solid #dde; border-radius:20px; padding:5px 13px; font-size:12px; font-weight:700; cursor:pointer; background:white; color:#666; white-space:nowrap; transition:all .15s; }
-.stage-pill.active-walkthrough { background:#e8e8e8; border-color:#666; color:#222; }
-.stage-pill.active-contract { background:#5bbfb5; border-color:#2a8a80; color:white; }
-.stage-pill.active-renovation { background:#7aac5e; border-color:#4a7a35; color:white; }
+.stage-bar { display:flex; gap:8px; padding:12px 14px 0; }
+.stage-pill { flex:1; border:2px solid rgba(255,255,255,.15); border-radius:14px; padding:11px 6px; font-size:12px; font-weight:700; cursor:pointer; background:rgba(255,255,255,.06); color:rgba(255,255,255,.5); white-space:nowrap; transition:all .15s; text-align:center; display:flex; align-items:center; justify-content:center; gap:5px; }
+.stage-pill.active-walkthrough { background:rgba(255,255,255,.15); border-color:rgba(255,255,255,.4); color:white; }
+.stage-pill.active-contract { background:#1a6b63; border-color:#5bbfb5; color:white; }
+.stage-pill.active-renovation { background:#2d5c1a; border-color:#7aac5e; color:white; }
 .stage-badge { display:inline-block; font-size:10px; font-weight:800; border-radius:20px; padding:2px 8px; margin-top:4px; }
-.stage-badge.walkthrough { background:#ddd; color:#333; }
+.stage-badge.walkthrough { background:rgba(255,255,255,.15); color:white; }
 .stage-badge.contract { background:#5bbfb5; color:white; }
 .stage-badge.renovation { background:#7aac5e; color:white; }
-.prop-card.stage-contract { border-left:6px solid #1d6b63; background:#5bbfb5; }
-.prop-card.stage-contract .prop-address { color:#0a2e2b; }
-.prop-card.stage-contract .prop-meta { color:#1d6b63; }
-.prop-card.stage-contract .prop-arrow { color:#0a2e2b; }
-.prop-card.stage-contract .prop-action-btn { background:rgba(0,0,0,0.12); color:#0a2e2b; border-color:rgba(0,0,0,0.15); }
-.prop-card.stage-renovation { border-left:6px solid #355c22; background:#7aac5e; }
-.prop-card.stage-renovation .prop-address { color:#1a2e10; }
-.prop-card.stage-renovation .prop-meta { color:#355c22; }
-.prop-card.stage-renovation .prop-arrow { color:#1a2e10; }
-.prop-card.stage-renovation .prop-action-btn { background:rgba(0,0,0,0.12); color:#1a2e10; border-color:rgba(0,0,0,0.15); }
 .prop-card.stage-walkthrough { border-left:6px solid #bbb; background:white; }
 /* ── Tasks ── */
 .tasks-page { padding: 12px; }
@@ -2367,7 +2359,15 @@ function PropertyList({currentUser,onOpen}){
     return(
       <div className={`prop-card stage-${stage}`}>
         <div className="prop-card-body" onClick={()=>onOpen(prop)}>
-          <div className="prop-thumb">{s.icon}</div>
+          <div className="prop-thumb">
+            {stage==='renovation'?(
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            ):stage==='contract'?(
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/><path d="M18 21l2-2-2-2" strokeWidth="1.2"/></svg>
+            ):(
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/><circle cx="15" cy="15" r="2"/></svg>
+            )}
+          </div>
           <div className="prop-info">
             <div className="prop-address">{prop.address}</div>
             <div className="prop-meta">{prop.sqft?prop.sqft+' sq ft  ·  ':''}{dateStr}</div>
@@ -2647,19 +2647,45 @@ function WalkthroughView({prop,currentUser,onBack,onPropUpdate}){
           <button className="btn-share" onClick={()=>setShowShare(true)}>Share</button>
         </div>
         <div className="sqft-bar">
-          <div className="sqft-field"><label>Sq Ft</label><input placeholder="1,800" value={sqft} onChange={e=>setSqft(e.target.value)} onBlur={savePropFields}/></div>
-          <div className="sqft-divider"/>
-          <span className="sqft-group-label">Current</span>
-          <div className="sqft-field"><label>Bed</label><input type="number" min="0" placeholder="3" value={curBed} onChange={e=>setCurBed(e.target.value)} onBlur={savePropFields}/></div>
-          <div className="sqft-field"><label>Bath</label><input type="number" min="0" placeholder="1" value={curBath} onChange={e=>setCurBath(e.target.value)} onBlur={savePropFields}/></div>
-          <div className="sqft-divider"/>
-          <span className="sqft-group-label">Future</span>
-          <div className="sqft-field"><label>Bed</label><input type="number" min="0" placeholder="4" value={futBed} onChange={e=>setFutBed(e.target.value)} onBlur={savePropFields}/></div>
-          <div className="sqft-field"><label>Bath</label><input type="number" min="0" placeholder="2" value={futBath} onChange={e=>setFutBath(e.target.value)} onBlur={savePropFields}/></div>
+          <div className="sqft-field">
+            <div className="sqft-field-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M2 20h20M4 20V4m0 0h16v16"/></svg>
+              <label>SQ FT</label>
+            </div>
+            <input placeholder="1,800" value={sqft} onChange={e=>setSqft(e.target.value)} onBlur={savePropFields}/>
+          </div>
+          <div className="sqft-field">
+            <div className="sqft-field-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M3 12h18M3 12V7a2 2 0 012-2h14a2 2 0 012 2v5M3 12v5a2 2 0 002 2h14a2 2 0 002-2v-5"/><path d="M7 12V9"/></svg>
+              <label>CURRENT BED</label>
+            </div>
+            <input type="number" min="0" placeholder="3" value={curBed} onChange={e=>setCurBed(e.target.value)} onBlur={savePropFields}/>
+          </div>
+          <div className="sqft-field">
+            <div className="sqft-field-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M4 12h16M4 12v6a1 1 0 001 1h14a1 1 0 001-1v-6M4 12V8a2 2 0 012-2h1a2 2 0 012 2v4"/><circle cx="7" cy="6" r="1" fill="white"/></svg>
+              <label>BATH</label>
+            </div>
+            <input type="number" min="0" placeholder="1" value={curBath} onChange={e=>setCurBath(e.target.value)} onBlur={savePropFields}/>
+          </div>
+          <div className="sqft-field">
+            <div className="sqft-field-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M3 12h18M3 12V7a2 2 0 012-2h14a2 2 0 012 2v5M3 12v5a2 2 0 002 2h14a2 2 0 002-2v-5"/><path d="M7 12V9"/></svg>
+              <label>FUTURE BED</label>
+            </div>
+            <input type="number" min="0" placeholder="4" value={futBed} onChange={e=>setFutBed(e.target.value)} onBlur={savePropFields}/>
+          </div>
+          <div className="sqft-field">
+            <div className="sqft-field-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M4 12h16M4 12v6a1 1 0 001 1h14a1 1 0 001-1v-6M4 12V8a2 2 0 012-2h1a2 2 0 012 2v4"/><circle cx="7" cy="6" r="1" fill="white"/></svg>
+              <label>FUTURE BATH</label>
+            </div>
+            <input type="number" min="0" placeholder="2" value={futBath} onChange={e=>setFutBath(e.target.value)} onBlur={savePropFields}/>
+          </div>
         </div>
         <div className="stage-bar">
-          {[{id:'walkthrough',label:'🔍 Walkthrough'},{id:'contract',label:'📝 Under Contract'},{id:'renovation',label:'🔨 Renovation'}].map(s=>(
-            <button key={s.id} className={`stage-pill${stage===s.id?' active-'+s.id:''}`} onClick={()=>saveStage(s.id)}>{s.label}</button>
+          {[{id:'walkthrough',icon:'🔍',label:'Walkthrough'},{id:'contract',icon:'📝',label:'Under Contract'},{id:'renovation',icon:'🔨',label:'Renovation'}].map(s=>(
+            <button key={s.id} className={`stage-pill${stage===s.id?' active-'+s.id:''}`} onClick={()=>saveStage(s.id)}>{s.icon} {s.label}</button>
           ))}
         </div>
         <div className="sync-bar">
