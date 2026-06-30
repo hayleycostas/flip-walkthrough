@@ -1978,7 +1978,25 @@ function TeamModal({currentUser,onClose}){
 
   async function saveEdit(){
     if(!name.trim())return;
-    await dbSet(`roster/${currentUser.uid}/${editingId}`,{id:editingId,name:name.trim(),email:email.trim(),phone:phone.trim(),role,addedAt:(roster[editingId]?.addedAt||Date.now())});
+    const oldName=roster[editingId]?.name||'';
+    const newName=name.trim();
+    await dbSet(`roster/${currentUser.uid}/${editingId}`,{id:editingId,name:newName,email:email.trim(),phone:phone.trim(),role,addedAt:(roster[editingId]?.addedAt||Date.now())});
+    // Cascade name change to all projects and tasks
+    if(oldName&&oldName!==newName){
+      const projectIds=await dbGet(`userProjects/${currentUser.uid}`)||{};
+      await Promise.all(Object.keys(projectIds).map(async projId=>{
+        // Update member record if present
+        const mems=await dbGet(`projects/${projId}/members`)||{};
+        const memEntry=Object.entries(mems).find(([,m])=>m.name===oldName);
+        if(memEntry) await dbSet(`projects/${projId}/members/${memEntry[0]}/name`,newName);
+        // Update all tasks assigned to old name
+        const tasks=await dbGet(`projects/${projId}/tasks`)||{};
+        await Promise.all(Object.entries(tasks)
+          .filter(([,t])=>t.assignedTo===oldName)
+          .map(([tid])=>dbSet(`projects/${projId}/tasks/${tid}/assignedTo`,newName))
+        );
+      }));
+    }
     setEditingId(null);setName('');setEmail('');setPhone('');setRole('Member');
   }
 
