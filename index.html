@@ -1430,10 +1430,39 @@ function InviteModal({prop,properties,currentUser,onClose}){
   const[role,setRole]=React.useState('Member');
   const[selectedPropId,setSelectedPropId]=React.useState(prop?.id||(properties?.[0]?.id||''));
   const[sent,setSent]=React.useState([]);
+  const[roster,setRoster]=React.useState({});
+  const[propMembers,setPropMembers]=React.useState({});
+  const[addedFromRoster,setAddedFromRoster]=React.useState({});
   const senderName=currentUser.displayName||currentUser.email;
 
   // resolve the active project object
   const activeProp=prop||(properties||[]).find(p=>p.id===selectedPropId)||null;
+
+  React.useEffect(()=>{
+    return dbListen(`roster/${currentUser.uid}`,d=>setRoster(d||{}));
+  },[currentUser.uid]);
+
+  React.useEffect(()=>{
+    if(!activeProp)return;
+    return dbListen(`projects/${activeProp.id}/members`,d=>setPropMembers(d||{}));
+  },[activeProp?.id]);
+
+  async function addFromRoster(m){
+    if(!activeProp)return;
+    await dbSet(`projects/${activeProp.id}/members/${m.id}`,{name:m.name,email:m.email,role:m.role,addedAt:Date.now()});
+    setAddedFromRoster(s=>({...s,[m.id]:true}));
+    fetch('/.netlify/functions/notify-property-added',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({memberEmail:m.email,address:activeProp.address,adderName:senderName}),
+    }).catch(e=>console.warn('notify failed:',e));
+  }
+
+  const rosterList=Object.values(roster).sort((a,b)=>a.name.localeCompare(b.name));
+  // Members already on this property (by id or by name match)
+  const alreadyOn=new Set([
+    ...Object.keys(propMembers),
+    ...Object.values(propMembers).map(m=>m.name),
+  ]);
 
   async function generateInvite(){
     if(!activeProp)return null;
@@ -1475,6 +1504,34 @@ function InviteModal({prop,properties,currentUser,onClose}){
           <select className="project-select" value={selectedPropId} onChange={e=>setSelectedPropId(e.target.value)}>
             {properties.map(p=><option key={p.id} value={p.id}>{p.address}</option>)}
           </select>
+        )}
+
+        {/* Existing team — quick-add without re-inviting */}
+        {rosterList.length>0&&(
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,.5)',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:8}}>Your Team</div>
+            {rosterList.map(m=>{
+              const on=alreadyOn.has(m.id)||alreadyOn.has(m.name);
+              const justAdded=!!addedFromRoster[m.id];
+              return(
+                <div key={m.id} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:'1px solid rgba(255,255,255,.07)'}}>
+                  <div style={{width:34,height:34,borderRadius:'50%',background:'rgba(255,255,255,.1)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:14,color:'white',flexShrink:0}}>{m.name[0].toUpperCase()}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:14,fontWeight:600,color:'white'}}>{m.name}</div>
+                    <div style={{fontSize:12,color:'rgba(255,255,255,.45)'}}>{m.role}</div>
+                  </div>
+                  {on?(
+                    <span style={{fontSize:12,color:'rgba(255,255,255,.4)',padding:'5px 12px'}}>Already on</span>
+                  ):justAdded?(
+                    <span style={{fontSize:12,color:'#5bbfb5',padding:'5px 12px'}}>✓ Added</span>
+                  ):(
+                    <button onClick={()=>addFromRoster(m)} style={{background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.2)',borderRadius:8,color:'white',fontSize:13,fontWeight:600,padding:'5px 14px',cursor:'pointer'}}>Add</button>
+                  )}
+                </div>
+              );
+            })}
+            <div style={{fontSize:11,color:'rgba(255,255,255,.3)',marginTop:10,marginBottom:4}}>— or invite someone new —</div>
+          </div>
         )}
 
         {/* Role pills */}
