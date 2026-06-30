@@ -2008,12 +2008,14 @@ function TeamModal({currentUser,onClose}){
   }
 
   const[syncing,setSyncing]=React.useState(null);
+  const[syncOldName,setSyncOldName]=React.useState('');
   async function syncTasks(m){
+    const searchFor=syncOldName.trim()||m.email||'';
+    if(!searchFor){setSyncOldName('__prompt__');return;}
     setSyncing(m.id);
-    // Match by current name AND email — catches any stragglers
-    const matchNames=[...new Set([m.name,m.email].filter(Boolean))];
+    const matchNames=[...new Set([searchFor,m.email,m.name].filter(Boolean))];
     await cascadeName(m.id,m.name,matchNames);
-    setSyncing(null);
+    setSyncing(null);setSyncOldName('');
   }
 
   async function removeMember(id){
@@ -2033,9 +2035,23 @@ function TeamModal({currentUser,onClose}){
       <div className="modal-btns" style={{marginTop:8}}>
         <button className="btn-primary" onClick={id?saveEdit:addMember}>Save</button>
         <button className="btn-secondary" onClick={()=>{setEditingId(null);setShowAdd(false);}}>Cancel</button>
-        {id&&<button style={{background:'#e8f0fb',border:'none',borderRadius:8,color:'#0f3460',fontSize:12,fontWeight:600,padding:'6px 12px',cursor:'pointer'}} onClick={()=>syncTasks(roster[id])}>{syncing===id?'Syncing…':'↺ Sync tasks'}</button>}
         {id&&<button className="btn-danger" style={{marginLeft:'auto'}} onClick={()=>removeMember(id)}>Delete</button>}
       </div>
+      {id&&(
+        <div style={{marginTop:10,padding:'10px 12px',background:'#fff3cd',borderRadius:8,border:'1px solid #ffc107'}}>
+          <div style={{fontSize:12,fontWeight:700,color:'#856404',marginBottom:6}}>↺ Rename tasks assigned to old name</div>
+          <div style={{display:'flex',gap:6}}>
+            <input value={syncOldName==='__prompt__'?'':syncOldName} onChange={e=>setSyncOldName(e.target.value)}
+              placeholder="Old name or email on tasks…"
+              style={{flex:1,border:'1px solid #ffc107',borderRadius:6,padding:'6px 10px',fontSize:13,background:'white'}}/>
+            <button onClick={()=>syncTasks(roster[id])} disabled={!!syncing}
+              style={{background:'#e2b04a',border:'none',borderRadius:6,color:'white',fontWeight:700,fontSize:13,padding:'6px 14px',cursor:'pointer',whiteSpace:'nowrap'}}>
+              {syncing===id?'Syncing…':'Update'}
+            </button>
+          </div>
+          {syncOldName==='__prompt__'&&<div style={{fontSize:11,color:'#856404',marginTop:4}}>Enter the old name/email that was on the tasks</div>}
+        </div>
+      )}
     </div>
   );
 
