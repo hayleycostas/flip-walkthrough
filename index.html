@@ -1535,28 +1535,28 @@ function InviteModal({prop,properties,currentUser,onClose}){
         {/* Existing team — quick-add without re-inviting */}
         {rosterList.length>0&&(
           <div style={{marginBottom:16}}>
-            <div style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,.5)',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:8}}>Your Team</div>
+            <div style={{fontSize:11,fontWeight:700,color:'#888',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:8}}>Your Team</div>
             {rosterList.map(m=>{
               const on=alreadyOn.has(m.id)||alreadyOn.has(m.name);
               const justAdded=!!addedFromRoster[m.id];
               return(
-                <div key={m.id} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:'1px solid rgba(255,255,255,.07)'}}>
-                  <div style={{width:34,height:34,borderRadius:'50%',background:'rgba(255,255,255,.1)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:14,color:'white',flexShrink:0}}>{m.name[0].toUpperCase()}</div>
+                <div key={m.id} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 0',borderBottom:'1px solid #f0f0f0'}}>
+                  <div style={{width:34,height:34,borderRadius:'50%',background:'#e8f0fb',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:14,color:'#0f3460',flexShrink:0}}>{m.name[0].toUpperCase()}</div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:14,fontWeight:600,color:'white'}}>{m.name}</div>
-                    <div style={{fontSize:12,color:'rgba(255,255,255,.45)'}}>{m.role}</div>
+                    <div style={{fontSize:14,fontWeight:600,color:'#1a1a2e'}}>{m.name}</div>
+                    <div style={{fontSize:12,color:'#888'}}>{m.role}</div>
                   </div>
                   {on?(
-                    <span style={{fontSize:12,color:'rgba(255,255,255,.4)',padding:'5px 12px'}}>Already on</span>
+                    <span style={{fontSize:12,color:'#aaa',padding:'5px 12px'}}>Already on</span>
                   ):justAdded?(
-                    <span style={{fontSize:12,color:'#5bbfb5',padding:'5px 12px'}}>✓ Added</span>
+                    <span style={{fontSize:12,color:'#27ae60',padding:'5px 12px',fontWeight:700}}>✓ Added</span>
                   ):(
-                    <button onClick={()=>addFromRoster(m)} style={{background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.2)',borderRadius:8,color:'white',fontSize:13,fontWeight:600,padding:'5px 14px',cursor:'pointer'}}>Add</button>
+                    <button onClick={()=>addFromRoster(m)} style={{background:'#0f3460',border:'none',borderRadius:8,color:'white',fontSize:13,fontWeight:600,padding:'6px 16px',cursor:'pointer'}}>Add</button>
                   )}
                 </div>
               );
             })}
-            <div style={{fontSize:11,color:'rgba(255,255,255,.3)',marginTop:10,marginBottom:4}}>— or invite someone new —</div>
+            <div style={{fontSize:11,color:'#bbb',textAlign:'center',margin:'12px 0 4px'}}>— or invite someone new —</div>
           </div>
         )}
 
