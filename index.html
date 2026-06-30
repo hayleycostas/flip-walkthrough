@@ -1644,6 +1644,12 @@ function TasksPage({propId,address,currentUser,members,inline}){
 
   function toggleDone(task){
     const wasDone=task.status==='done';
+    if(!wasDone){
+      // mark done then delete after a short delay so the checkmark is visible
+      updateTask(task.id,{status:'done'});
+      setTimeout(()=>dbRemove(`projects/${propId}/tasks/${task.id}`),800);
+      return;
+    }
     updateTask(task.id,{status:wasDone?'todo':'done'});
     if(!wasDone){
       clearTimeout(toastTimer.current);
@@ -2217,7 +2223,10 @@ function TaskEditDrawer({task, propId, address, currentUser, onClose}){
     await save({status:'done'});
     clearTimeout(toastTimer.current);
     setToast(true);
-    toastTimer.current=setTimeout(()=>{setToast(false);onClose();},3000);
+    toastTimer.current=setTimeout(async()=>{
+      await dbRemove(`projects/${propId}/tasks/${task.id}`);
+      setToast(false);onClose();
+    },800);
   }
 
   async function undo(){
