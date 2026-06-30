@@ -1430,7 +1430,7 @@ function InviteModal({prop,properties,currentUser,onClose}){
   const[role,setRole]=React.useState('Member');
   const[selectedPropId,setSelectedPropId]=React.useState(prop?.id||(properties?.[0]?.id||''));
   const[sent,setSent]=React.useState([]);
-  const[roster,setRoster]=React.useState({});
+  const[teamMap,setTeamMap]=React.useState({});// uid→{name,email,role}
   const[propMembers,setPropMembers]=React.useState({});
   const[addedFromRoster,setAddedFromRoster]=React.useState({});
   const senderName=currentUser.displayName||currentUser.email;
@@ -1438,8 +1438,30 @@ function InviteModal({prop,properties,currentUser,onClose}){
   // resolve the active project object
   const activeProp=prop||(properties||[]).find(p=>p.id===selectedPropId)||null;
 
+  // Build team from roster + all properties the owner has
   React.useEffect(()=>{
-    return dbListen(`roster/${currentUser.uid}`,d=>setRoster(d||{}));
+    let cancelled=false;
+    async function load(){
+      // Start with roster
+      const rosterData=await dbGet(`roster/${currentUser.uid}`)||{};
+      const merged={};
+      Object.entries(rosterData).forEach(([id,m])=>{
+        if(m.name&&id!==currentUser.uid) merged[id]=m;
+      });
+      // Also pull members from all properties this user owns
+      const projectIds=await dbGet(`userProjects/${currentUser.uid}`)||{};
+      await Promise.all(Object.keys(projectIds).map(async projId=>{
+        const mems=await dbGet(`projects/${projId}/members`)||{};
+        Object.entries(mems).forEach(([uid,m])=>{
+          if(uid!==currentUser.uid&&m.name&&!merged[uid]){
+            merged[uid]={id:uid,name:m.name,email:m.email||'',role:m.role||'Member'};
+          }
+        });
+      }));
+      if(!cancelled) setTeamMap(merged);
+    }
+    load();
+    return()=>{cancelled=true;};
   },[currentUser.uid]);
 
   React.useEffect(()=>{
@@ -1450,15 +1472,19 @@ function InviteModal({prop,properties,currentUser,onClose}){
   async function addFromRoster(m){
     if(!activeProp)return;
     await dbSet(`projects/${activeProp.id}/members/${m.id}`,{name:m.name,email:m.email,role:m.role,addedAt:Date.now()});
+    // Also save to roster so they appear in future
+    await dbSet(`roster/${currentUser.uid}/${m.id}`,{id:m.id,name:m.name,email:m.email,role:m.role,addedAt:Date.now()});
     setAddedFromRoster(s=>({...s,[m.id]:true}));
-    fetch('/.netlify/functions/notify-property-added',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({memberEmail:m.email,address:activeProp.address,adderName:senderName}),
-    }).catch(e=>console.warn('notify failed:',e));
+    if(m.email){
+      fetch('/.netlify/functions/notify-property-added',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({memberEmail:m.email,address:activeProp.address,adderName:senderName}),
+      }).catch(e=>console.warn('notify failed:',e));
+    }
   }
 
-  const rosterList=Object.values(roster).sort((a,b)=>a.name.localeCompare(b.name));
-  // Members already on this property (by id or by name match)
+  const rosterList=Object.values(teamMap).sort((a,b)=>a.name.localeCompare(b.name));
+  // Members already on this property (by uid key or by name)
   const alreadyOn=new Set([
     ...Object.keys(propMembers),
     ...Object.values(propMembers).map(m=>m.name),
