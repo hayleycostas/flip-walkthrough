@@ -260,41 +260,47 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .tasks-add-input { flex:1; border:2px solid #dde; border-radius:10px; padding:12px 14px; font-size:15px; outline:none; }
 .tasks-add-input:focus { border-color:#0f3460; }
 .tasks-add-btn { background:#0f3460; color:white; border:none; border-radius:10px; padding:12px 18px; font-size:18px; font-weight:700; cursor:pointer; flex-shrink:0; }
+.task-add-fab { display:flex; align-items:center; gap:8px; width:100%; padding:13px 16px; background:#0f3460; color:white; border:none; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; margin-bottom:14px; justify-content:center; letter-spacing:.2px; }
 .tasks-filters { display:flex; gap:6px; margin-bottom:12px; overflow-x:auto; padding-bottom:2px; }
 .task-filter { border:none; border-radius:20px; padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer; background:#f0f2f5; color:#666; white-space:nowrap; }
 .task-filter.active { background:#0f3460; color:white; }
-.task-card { background:white; border-radius:12px; border:2px solid #eee; margin-bottom:10px; overflow:hidden; transition:border-color .15s; }
-.task-card.status-done { border-color:#d4edda; background:#f9fffe; }
-.task-card.status-inprogress { border-color:#fff3cd; background:#fffdf0; }
+.task-card { background:white; border-radius:12px; border:2px solid #eee; margin-bottom:8px; overflow:hidden; transition:border-color .15s; cursor:pointer; }
+.task-card:active { background:#f8f9fa; }
 .task-card.urgent { border-color:#dc3545; background:#fff5f5; }
-.task-urgent-btn { width:26px; height:26px; border-radius:50%; border:2px solid #dde; background:white; font-size:12px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#ccc; transition:all .15s; line-height:1; padding:0; }
-.task-urgent-btn.on { background:#dc3545; border-color:#dc3545; color:white; }
-.task-card-top { display:flex; align-items:flex-start; gap:10px; padding:12px 14px; cursor:pointer; }
-.task-status-btn { width:26px; height:26px; border-radius:50%; border:2px solid #ddd; background:white; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; margin-top:1px; transition:all .15s; }
-.task-status-btn.todo { border-color:#ddd; }
-.task-status-btn.inprogress { border-color:#d4a017; background:#fff3cd; }
-.task-status-btn.done { border-color:#28a745; background:#28a745; color:white; }
-.task-title { flex:1; font-size:15px; font-weight:600; color:#1a1a2e; line-height:1.4; }
+.task-card.status-done { border-color:#d4edda; background:#f9fffe; }
+.task-card-top { display:flex; align-items:center; gap:10px; padding:12px 14px; }
+.task-done-check { width:22px; height:22px; border-radius:50%; border:2px solid #ccc; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; cursor:pointer; flex-shrink:0; color:white; background:white; transition:all .15s; }
+.task-done-check.checked { background:#28a745; border-color:#28a745; }
+.task-title { flex:1; font-size:15px; font-weight:600; color:#1a1a2e; line-height:1.4; min-width:0; }
 .task-title.done { text-decoration:line-through; color:#aaa; }
 .task-title-input { width:100%; font-size:15px; font-weight:600; color:#1a1a2e; line-height:1.4; border:none; outline:none; background:transparent; padding:0; font-family:inherit; }
-.task-title-input.done { text-decoration:line-through; color:#aaa; }
-.task-title-input:focus { background:#f4f7fb; border-radius:4px; padding:1px 4px; margin:-1px -4px; }
-.task-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:4px; }
+.task-meta { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:3px; }
 .task-toast { display:flex; align-items:center; justify-content:space-between; background:#1a1a2e; color:white; border-radius:10px; padding:10px 14px; margin-bottom:10px; font-size:14px; font-weight:600; animation:fadeIn .2s ease; }
 .task-toast-undo { background:white; color:#1a1a2e; border:none; border-radius:6px; padding:4px 12px; font-size:13px; font-weight:700; cursor:pointer; }
-.task-done-check { width:22px; height:22px; border-radius:50%; border:2px solid #ccc; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; cursor:pointer; flex-shrink:0; margin-top:2px; color:white; background:white; transition:all .15s; }
-.task-done-check.checked { background:#28a745; border-color:#28a745; }
+.task-urgent-pip { width:8px; height:8px; border-radius:50%; background:#dc3545; flex-shrink:0; }
 .task-assignee { font-size:11px; background:#e8f0fb; color:#0f3460; border-radius:20px; padding:2px 8px; font-weight:700; }
 .task-tag { font-size:11px; background:#fff3cd; color:#856404; border-radius:20px; padding:2px 8px; font-weight:700; }
+.task-due-overdue { font-size:11px; color:#dc3545; font-weight:700; }
+.task-due-soon { font-size:11px; color:#d4a017; font-weight:700; }
+.task-due-ok { font-size:11px; color:#aaa; }
 .task-date { font-size:11px; color:#aaa; }
-.task-body { padding:0 14px 12px 50px; }
 .task-notes-input { width:100%; border:1.5px solid #eee; border-radius:8px; padding:8px 10px; font-size:13px; resize:none; outline:none; min-height:60px; font-family:inherit; }
 .task-notes-input:focus { border-color:#0f3460; }
-.task-actions { display:flex; gap:8px; margin-top:8px; align-items:center; }
 .task-assign-select { flex:1; border:1.5px solid #eee; border-radius:8px; padding:7px 10px; font-size:13px; outline:none; background:white; }
 .task-delete-btn { background:none; border:none; color:#ddd; font-size:18px; cursor:pointer; padding:4px; }
 .task-delete-btn:hover { color:#dc3545; }
 .tasks-empty { text-align:center; padding:40px 20px; color:#aaa; font-size:14px; }
+.drawer-field-label { font-size:11px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
+.drawer-section { margin-bottom:18px; }
+.drawer-assignee-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.drawer-assignee-chip { border:2px solid #dde; border-radius:20px; padding:6px 14px; font-size:13px; font-weight:700; background:white; color:#666; cursor:pointer; transition:all .15s; }
+.drawer-assignee-chip.on { border-color:#0f3460; background:#0f3460; color:white; }
+.drawer-tag-chip { display:inline-flex; align-items:center; gap:4px; background:#e8f0fb; border:1.5px solid #aac4e8; border-radius:20px; padding:4px 10px; font-size:12px; font-weight:700; color:#0f3460; cursor:pointer; }
+.drawer-due-input { width:100%; padding:9px 12px; border-radius:10px; border:1.5px solid #e0e0e0; font-size:14px; background:white; outline:none; }
+.drawer-due-input:focus { border-color:#0f3460; }
+.drawer-delete-row { display:flex; justify-content:center; margin-top:8px; }
+.drawer-delete-link { background:none; border:none; color:#dc3545; font-size:13px; font-weight:600; cursor:pointer; padding:8px; opacity:.7; }
+.drawer-delete-link:hover { opacity:1; }
 .summary-page { padding: 12px; }
 .summary-card { background: white; border-radius: 12px; padding: 18px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
 .summary-card h3 { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 10px; }
@@ -1606,119 +1612,50 @@ function InviteModal({prop,properties,currentUser,onClose}){
 // ── TasksPage ─────────────────────────────────────────────────────────
 function TasksPage({propId,address,currentUser,members,inline}){
   const[tasks,setTasks]=React.useState({});
-  const[newTitle,setNewTitle]=React.useState('');
   const[filter,setFilter]=React.useState('all');
-  const[expanded,setExpanded]=React.useState({});
-  const[toast,setToast]=React.useState(null);
-  const toastTimer=React.useRef(null);
+  const[drawerTask,setDrawerTask]=React.useState(null); // task object or 'new'
   const username=currentUser.displayName||currentUser.email;
 
   React.useEffect(()=>dbListen(`projects/${propId}/tasks`,t=>setTasks(t||{})),[propId]);
 
-  async function addTask(){
-    const title=newTitle.trim();if(!title)return;
-    const id=uid();
-    await dbSet(`projects/${propId}/tasks/${id}`,{id,title,status:'todo',notes:'',assignedTo:'',tagged:{},createdBy:username,createdAt:Date.now(),updatedAt:Date.now()});
-    setNewTitle('');
-  }
-
-  async function updateTask(id,patch){
-    await dbUpdate(`projects/${propId}/tasks/${id}`,{...patch,updatedAt:Date.now(),updatedBy:username});
-  }
-
-  async function notifyAssignment(assigneeName, taskTitle, address){
-    // Find the uid for this member so we can look up their FCM token server-side
-    const entry = Object.entries(members||{}).find(([,m])=>m.name===assigneeName);
-    if(!entry) return;
-    const [assigneeUid] = entry;
-    try {
-      await fetch('/.netlify/functions/notify-assignment',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({assigneeUid, taskTitle, address, assignerName:username}),
-      });
-    } catch(e){ console.warn('notify failed:',e); }
-  }
-
-  async function deleteTask(id){await dbRemove(`projects/${propId}/tasks/${id}`);}
-
-  function toggleDone(task){
-    const wasDone=task.status==='done';
-    if(!wasDone){
-      // mark done then delete after a short delay so the checkmark is visible
-      updateTask(task.id,{status:'done'});
-      setTimeout(()=>dbRemove(`projects/${propId}/tasks/${task.id}`),800);
-      return;
-    }
-    updateTask(task.id,{status:wasDone?'todo':'done'});
-    if(!wasDone){
-      clearTimeout(toastTimer.current);
-      setToast(task.id);
-      toastTimer.current=setTimeout(()=>setToast(null),4000);
-    } else {
-      setToast(null);
-    }
-  }
-
-  function undoToast(){
-    if(!toast)return;
-    const task=tasks[toast];
-    if(task)updateTask(task.id,{status:'todo'});
-    clearTimeout(toastTimer.current);
-    setToast(null);
-  }
-
-  function toggleTag(task,name){
-    const tagged={...(task.tagged||{})};
-    if(tagged[name])delete tagged[name];else tagged[name]=true;
-    updateTask(task.id,{tagged});
-  }
-
-  async function addTaskPhoto(taskId,file){
-    const src=await new Promise((res,rej)=>{
-      const r=new FileReader();
-      r.onload=async ev=>{try{res(await compressImage(ev.target.result));}catch(err){rej(err);}};
-      r.onerror=rej;
-      r.readAsDataURL(file);
-    });
-    const cur=tasks[taskId]||{};
-    await updateTask(taskId,{photos:[...(cur.photos||[]),src]});
-  }
-
-  async function removeTaskPhoto(taskId,idx){
-    const cur=tasks[taskId]||{};
-    await updateTask(taskId,{photos:(cur.photos||[]).filter((_,i)=>i!==idx)});
-  }
-
   const FILTERS=[{id:'all',label:'All'},{id:'todo',label:'To Do'},{id:'done',label:'Done'}];
   const memberList=Object.values(members||{}).sort((a,b)=>a.name.localeCompare(b.name));
-  const memberNames=memberList.map(m=>m.name);
 
   const list=Object.values(tasks)
     .filter(t=>filter==='all'||t.status===filter)
     .sort((a,b)=>{
-      if(a.status!==b.status){const o={todo:0,done:1};return(o[a.status]??0)-(o[b.status]??0);}
       if(!!b.urgent!==!!a.urgent)return b.urgent?1:-1;
+      if(a.dueDate&&b.dueDate)return a.dueDate.localeCompare(b.dueDate);
+      if(a.dueDate)return -1;if(b.dueDate)return 1;
       return(a.createdAt-b.createdAt);
     });
 
   const counts={todo:0,done:0};
   Object.values(tasks).forEach(t=>{if(counts[t.status]!==undefined)counts[t.status]++;});
 
+  function dueBadge(dueDate){
+    if(!dueDate)return null;
+    const today=new Date().toISOString().slice(0,10);
+    const tomorrow=new Date(Date.now()+86400000).toISOString().slice(0,10);
+    if(dueDate<today)return<span className="task-due-overdue">⚠ Overdue</span>;
+    if(dueDate===today)return<span className="task-due-overdue">Due today</span>;
+    if(dueDate===tomorrow)return<span className="task-due-soon">Due tomorrow</span>;
+    return<span className="task-due-ok">📅 {dueDate}</span>;
+  }
+
   const inner=(
     <>
-      {toast&&(
-        <div className="task-toast">
-          ✓ Marked as done
-          <button onClick={undoToast} className="task-toast-undo">Undo</button>
-        </div>
+      {drawerTask&&(
+        <TaskEditDrawer
+          task={drawerTask==='new'?null:drawerTask}
+          propId={propId}
+          address={address}
+          currentUser={currentUser}
+          members={members}
+          onClose={()=>setDrawerTask(null)}
+        />
       )}
-      <div className="tasks-add-row">
-        <input className="tasks-add-input" placeholder="Add a task…" value={newTitle}
-          onChange={e=>setNewTitle(e.target.value)}
-          onKeyDown={e=>e.key==='Enter'&&addTask()}/>
-        <button className="tasks-add-btn" onClick={addTask}>+</button>
-      </div>
+      <button className="task-add-fab" onClick={()=>setDrawerTask('new')}>＋ Add Task</button>
       <div className="tasks-filters">
         {FILTERS.map(f=>(
           <button key={f.id} className={`task-filter${filter===f.id?' active':''}`} onClick={()=>setFilter(f.id)}>
@@ -1726,123 +1663,33 @@ function TasksPage({propId,address,currentUser,members,inline}){
           </button>
         ))}
       </div>
-      {list.length===0&&<div className="tasks-empty">{Object.keys(tasks).length===0?'No tasks yet — add one above.':'No tasks in this filter.'}</div>}
+      {list.length===0&&<div className="tasks-empty">{Object.keys(tasks).length===0?'No tasks yet — tap Add Task to get started.':'No tasks in this filter.'}</div>}
       {list.map(task=>{
-        const isOpen=!!expanded[task.id];
         const tagged=Object.keys(task.tagged||{});
         const photos=task.photos||[];
         return(
-          <div key={task.id} className={`task-card status-${task.status}${task.urgent?' urgent':''}`}>
-            {/* ── Collapsed header ── */}
-            <div className="task-card-top" onClick={()=>setExpanded(e=>({...e,[task.id]:!e[task.id]}))}>
-              <button className={`task-urgent-btn${task.urgent?' on':''}`}
-                onClick={e=>{e.stopPropagation();updateTask(task.id,{urgent:!task.urgent});}}
-                title="Mark urgent">!</button>
-              <div className={`task-done-check${task.status==='done'?' checked':''}`}>{task.status==='done'&&'✓'}</div>
+          <div key={task.id} className={`task-card status-${task.status}${task.urgent?' urgent':''}`}
+            onClick={()=>setDrawerTask(task)}>
+            <div className="task-card-top">
+              <div className={`task-done-check${task.status==='done'?' checked':''}`}
+                onClick={e=>{e.stopPropagation();/* handled in drawer */}}>
+                {task.status==='done'&&'✓'}
+              </div>
               <div style={{flex:1,minWidth:0}}>
-                {isOpen?(
-                  <input
-                    className={`task-title-input${task.status==='done'?' done':''}`}
-                    value={task.title}
-                    onClick={e=>e.stopPropagation()}
-                    onChange={e=>updateTask(task.id,{title:e.target.value})}
-                    placeholder="Task title…"
-                    autoFocus
-                  />
-                ):(
-                  <div className={`task-title-input${task.status==='done'?' done':''}`} style={{cursor:'pointer',padding:'2px 0',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
-                    {task.title||'Untitled task'}
-                  </div>
-                )}
+                <div className={`task-title${task.status==='done'?' done':''}`}
+                  style={{whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+                  {task.title||'Untitled task'}
+                </div>
                 <div className="task-meta">
+                  {task.urgent&&<span className="task-urgent-pip"/>}
                   {task.assignedTo&&<span className="task-assignee">👤 {task.assignedTo}</span>}
                   {tagged.map(n=><span key={n} className="task-tag">@{n}</span>)}
+                  {dueBadge(task.dueDate)}
                   {photos.length>0&&<span style={{fontSize:11,color:'#888'}}>📷 {photos.length}</span>}
-                  {task.updatedBy&&<span className="task-date">{timeAgo(task.updatedAt)}</span>}
                 </div>
               </div>
-              <span style={{fontSize:12,color:'#ccc',marginLeft:4}}>{isOpen?'▴':'▾'}</span>
+              <span style={{fontSize:13,color:'#ccc',marginLeft:4}}>›</span>
             </div>
-
-            {/* ── Expanded body ── */}
-            {isOpen&&(
-              <div className="task-body">
-                <textarea className="task-notes-input" placeholder="Add notes…" value={task.notes||''}
-                  onChange={e=>updateTask(task.id,{notes:e.target.value})}/>
-
-                {photos.length>0&&(
-                  <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:8}}>
-                    {photos.map((src,i)=>(
-                      <div key={i} style={{position:'relative'}}>
-                        <img src={src} style={{width:80,height:80,objectFit:'cover',borderRadius:8,border:'1px solid #eee'}}/>
-                        <button onClick={()=>removeTaskPhoto(task.id,i)}
-                          style={{position:'absolute',top:-6,right:-6,background:'#dc3545',color:'white',border:'none',borderRadius:'50%',width:18,height:18,fontSize:10,cursor:'pointer',lineHeight:'18px',padding:0}}>×</button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Tag — dropdown + chips (shown first) */}
-                {memberList.length>0&&(
-                  <div style={{marginTop:12}}>
-                    <div style={{fontSize:11,fontWeight:700,color:'#888',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:6}}>@ Tag for attention</div>
-                    <select style={{width:'100%',padding:'8px 10px',borderRadius:10,border:'1.5px solid #dde',fontSize:13,background:'white',marginBottom:tagged.length?8:0}}
-                      value=""
-                      onChange={e=>{if(e.target.value)toggleTag(task,e.target.value);}}>
-                      <option value="">+ Add tag…</option>
-                      {memberList.filter(m=>!(task.tagged||{})[m.name]).map(m=><option key={m.name} value={m.name}>{m.name}</option>)}
-                    </select>
-                    {tagged.length>0&&(
-                      <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
-                        {tagged.map(n=>(
-                          <span key={n} onClick={()=>toggleTag(task,n)}
-                            style={{display:'inline-flex',alignItems:'center',gap:4,background:'#e8f0fb',border:'1.5px solid #aac4e8',borderRadius:20,padding:'4px 10px',fontSize:12,fontWeight:700,color:'#0f3460',cursor:'pointer'}}>
-                            @{n} <span style={{fontSize:14,lineHeight:1,opacity:.6}}>×</span>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Assign — button chips (shown second) */}
-                {memberList.length>0&&(
-                  <div style={{marginTop:12}}>
-                    <div style={{fontSize:11,fontWeight:700,color:'#888',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:6}}>Assign to</div>
-                    <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
-                      {memberList.map(m=>{
-                        const on=task.assignedTo===m.name;
-                        return(
-                          <button key={m.name} onClick={()=>{
-                            const newVal=on?'':m.name;
-                            updateTask(task.id,{assignedTo:newVal});
-                            if(newVal) notifyAssignment(newVal,task.title,address||'');
-                          }} style={{border:'2px solid',borderColor:on?'#0f3460':'#dde',borderRadius:20,padding:'5px 12px',fontSize:12,fontWeight:700,background:on?'#0f3460':'white',color:on?'white':'#666',cursor:'pointer',transition:'all .15s'}}>
-                            {on?'✓ ':''}{m.name}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                <div style={{display:'flex',gap:8,marginTop:12,alignItems:'center'}}>
-                  <label style={{cursor:'pointer',padding:'7px 12px',background:'#f4f7fb',borderRadius:8,fontSize:13,border:'1px solid #dde',flexShrink:0}}>
-                    📷 Photo
-                    <input type="file" accept="image/*" multiple style={{display:'none'}}
-                      onChange={e=>{Array.from(e.target.files).forEach(f=>addTaskPhoto(task.id,f));e.target.value='';}}/>
-                  </label>
-                  <button className="task-delete-btn" onClick={()=>deleteTask(task.id)}>🗑 Delete</button>
-                </div>
-
-                <button onClick={()=>toggleDone(task)}
-                  style={{marginTop:12,width:'100%',padding:'11px',borderRadius:10,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,
-                    background:task.status==='done'?'#f4f7fb':'#0f3460',
-                    color:task.status==='done'?'#888':'white'}}>
-                  {task.status==='done'?'↩ Mark Undone':'✓ Mark as Done'}
-                </button>
-              </div>
-            )}
           </div>
         );
       })}
@@ -2326,24 +2173,48 @@ function MigrationModal({currentUser,onDone}){
 }
 
 // ── Property List ────────────────────────────────────────────────────
-function TaskEditDrawer({task, propId, address, currentUser, onClose}){
-  const[t,setT]=React.useState(task);
-  const[members,setMembers]=React.useState({});
-  const[toast,setToast]=React.useState(false);
-  const toastTimer=React.useRef(null);
+function TaskEditDrawer({task, propId, address, currentUser, members: membersProp, onClose}){
+  const isNew=!task;
   const username=currentUser.displayName||currentUser.email;
-
+  const[fetchedMembers,setFetchedMembers]=React.useState(null);
   React.useEffect(()=>{
-    dbGet(`projects/${propId}/members`).then(m=>setMembers(m||{}));
-  },[propId]);
+    if(!membersProp)dbGet(`projects/${propId}/members`).then(m=>setFetchedMembers(m||{}));
+  },[propId,membersProp]);
+  const membersObj=membersProp||(fetchedMembers||{});
+  const memberList=React.useMemo(()=>Object.entries(membersObj).sort((a,b)=>a[1].name.localeCompare(b[1].name)),[membersObj]);
 
-  // Keep local state in sync if task changes externally
-  React.useEffect(()=>{ setT(task); },[task]);
+  const[t,setT]=React.useState(()=>task||{title:'',status:'todo',notes:'',assignedTo:'',tagged:{},urgent:false,dueDate:''});
+  const[toast,setToast]=React.useState(false);
+  const[saving,setSaving]=React.useState(false);
+  const toastTimer=React.useRef(null);
+
+  React.useEffect(()=>{if(task)setT(task);},[task]);
 
   async function save(patch){
+    if(isNew)return; // new tasks saved via create()
     const updated={...t,...patch,updatedAt:Date.now(),updatedBy:username};
     setT(updated);
     await dbUpdate(`projects/${propId}/tasks/${task.id}`,{...patch,updatedAt:Date.now(),updatedBy:username});
+  }
+
+  async function create(){
+    if(!t.title.trim())return;
+    setSaving(true);
+    const id=uid();
+    const now=Date.now();
+    await dbSet(`projects/${propId}/tasks/${id}`,{
+      id,title:t.title.trim(),status:'todo',notes:t.notes||'',
+      assignedTo:t.assignedTo||'',tagged:t.tagged||{},urgent:!!t.urgent,
+      dueDate:t.dueDate||'',createdBy:username,createdAt:now,updatedAt:now,updatedBy:username,
+    });
+    if(t.assignedTo){
+      const entry=memberList.find(([,m])=>m.name===t.assignedTo);
+      if(entry) fetch('/.netlify/functions/notify-assignment',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({assigneeUid:entry[0],taskTitle:t.title,address,assignerName:username}),
+      }).catch(()=>{});
+    }
+    onClose();
   }
 
   async function markDone(){
@@ -2362,17 +2233,57 @@ function TaskEditDrawer({task, propId, address, currentUser, onClose}){
     await save({status:'todo'});
   }
 
-  const memberNames=Object.values(members).sort((a,b)=>a.name.localeCompare(b.name)).map(m=>m.name);
+  async function deleteTask(){
+    if(!window.confirm('Delete this task?'))return;
+    await dbRemove(`projects/${propId}/tasks/${task.id}`);
+    onClose();
+  }
+
+  async function addPhoto(file){
+    const src=await new Promise((res,rej)=>{
+      const r=new FileReader();
+      r.onload=async ev=>{try{res(await compressImage(ev.target.result));}catch(err){rej(err);}};
+      r.onerror=rej;r.readAsDataURL(file);
+    });
+    const cur=isNew?t:(await dbGet(`projects/${propId}/tasks/${task.id}`))||t;
+    const photos=[...(cur.photos||[]),src];
+    if(isNew){setT(p=>({...p,photos}));}else{save({photos});}
+  }
+
+  function toggleTag(name){
+    const tagged={...(t.tagged||{})};
+    if(tagged[name])delete tagged[name];else tagged[name]=true;
+    setT(p=>({...p,tagged}));
+    if(!isNew)save({tagged});
+  }
+
+  function setAssignee(name){
+    const newVal=t.assignedTo===name?'':name;
+    setT(p=>({...p,assignedTo:newVal}));
+    if(!isNew){
+      save({assignedTo:newVal});
+      if(newVal){
+        const entry=memberList.find(([,m])=>m.name===newVal);
+        if(entry) fetch('/.netlify/functions/notify-assignment',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({assigneeUid:entry[0],taskTitle:t.title,address,assignerName:username}),
+        }).catch(()=>{});
+      }
+    }
+  }
+
+  const tagged=Object.keys(t.tagged||{});
+  const photos=t.photos||[];
 
   return(
     <div className="task-drawer-overlay" onClick={onClose}>
       <div className="task-drawer" onClick={e=>e.stopPropagation()}>
         <div className="task-drawer-handle"/>
         <div className="task-drawer-header">
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6}}>
-            <div className="task-drawer-prop">📍 {address}</div>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+            <div className="task-drawer-prop">{isNew?'New Task':'📍 '+address}</div>
             <button
-              onClick={()=>save({urgent:!t.urgent})||setT(p=>({...p,urgent:!p.urgent}))}
+              onClick={()=>{const u=!t.urgent;setT(p=>({...p,urgent:u}));if(!isNew)save({urgent:u});}}
               style={{display:'flex',alignItems:'center',gap:5,padding:'5px 12px',borderRadius:20,border:'2px solid',borderColor:t.urgent?'#dc3545':'#dde',background:t.urgent?'#dc3545':'white',color:t.urgent?'white':'#aaa',fontWeight:700,fontSize:12,cursor:'pointer',transition:'all .15s'}}>
               ! {t.urgent?'Urgent':'Mark Urgent'}
             </button>
@@ -2381,10 +2292,14 @@ function TaskEditDrawer({task, propId, address, currentUser, onClose}){
             className="task-title-input"
             style={{fontSize:17,fontWeight:700,width:'100%',border:'none',outline:'none',padding:0,background:'transparent',color:'#1a1a2e'}}
             value={t.title||''}
-            onChange={e=>setT({...t,title:e.target.value})}
-            onBlur={e=>save({title:e.target.value.trim()})}
+            placeholder="Task title…"
+            autoFocus={isNew}
+            onChange={e=>setT(p=>({...p,title:e.target.value}))}
+            onBlur={e=>{if(!isNew)save({title:e.target.value.trim()});}}
+            onKeyDown={e=>e.key==='Enter'&&isNew&&create()}
           />
         </div>
+
         <div className="task-drawer-body">
           {toast&&(
             <div style={{background:'#d4edda',borderRadius:10,padding:'10px 14px',marginBottom:14,display:'flex',alignItems:'center',gap:10}}>
@@ -2393,43 +2308,100 @@ function TaskEditDrawer({task, propId, address, currentUser, onClose}){
             </div>
           )}
 
-          <div className="notes-label" style={{marginBottom:6}}>Assign to</div>
-          <select className="task-assign-select" style={{width:'100%',marginBottom:16,padding:'9px 12px',borderRadius:10,border:'1.5px solid #e0e0e0',fontSize:14,background:'white'}}
-            value={t.assignedTo||''}
-            onChange={e=>{
-              const name=e.target.value;
-              setT({...t,assignedTo:name});
-              save({assignedTo:name});
-              if(name){
-                const entry=Object.entries(members).find(([,m])=>m.name===name);
-                if(entry){
-                  fetch('/.netlify/functions/notify-assignment',{
-                    method:'POST',headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({assigneeUid:entry[0],taskTitle:t.title,address,assignerName:username}),
-                  }).catch(()=>{});
-                }
-              }
-            }}>
-            <option value="">Unassigned</option>
-            {memberNames.map(n=><option key={n} value={n}>{n}</option>)}
-            {t.assignedTo&&!memberNames.includes(t.assignedTo)&&<option value={t.assignedTo}>{t.assignedTo}</option>}
-          </select>
-
-          <div className="notes-label" style={{marginBottom:6}}>Notes</div>
-          <textarea className="notes-input" style={{marginBottom:16}}
-            value={t.notes||''}
-            placeholder="Add notes..."
-            onChange={e=>setT({...t,notes:e.target.value})}
-            onBlur={e=>save({notes:e.target.value})}
-          />
-
-          {t.status!=='done'&&(
-            <button onClick={markDone} style={{width:'100%',padding:'14px',background:'#0f3460',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer'}}>
-              ✅ Mark as Done
-            </button>
+          {/* Assign to */}
+          {memberList.length>0&&(
+            <div className="drawer-section">
+              <div className="drawer-field-label">Assign to</div>
+              <div className="drawer-assignee-chips">
+                {memberList.map(([,m])=>(
+                  <button key={m.name} className={`drawer-assignee-chip${t.assignedTo===m.name?' on':''}`}
+                    onClick={()=>setAssignee(m.name)}>
+                    {t.assignedTo===m.name?'✓ ':''}{m.name}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
-          {t.status==='done'&&!toast&&(
-            <div style={{textAlign:'center',padding:'12px',background:'#f0faf2',borderRadius:12,color:'#28a745',fontWeight:700,fontSize:14}}>✅ Completed</div>
+
+          {/* Due date */}
+          <div className="drawer-section">
+            <div className="drawer-field-label">Due date</div>
+            <input type="date" className="drawer-due-input"
+              value={t.dueDate||''}
+              onChange={e=>{setT(p=>({...p,dueDate:e.target.value}));if(!isNew)save({dueDate:e.target.value});}}
+            />
+          </div>
+
+          {/* Tags */}
+          {memberList.length>0&&(
+            <div className="drawer-section">
+              <div className="drawer-field-label">@ Tag for attention</div>
+              <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                {memberList.map(([,m])=>{
+                  const on=!!(t.tagged||{})[m.name];
+                  return(
+                    <button key={m.name} onClick={()=>toggleTag(m.name)}
+                      style={{border:'2px solid',borderColor:on?'#856404':'#dde',borderRadius:20,padding:'5px 12px',fontSize:12,fontWeight:700,background:on?'#fff3cd':'white',color:on?'#856404':'#666',cursor:'pointer',transition:'all .15s'}}>
+                      {on?'@ ':''}{m.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Notes */}
+          <div className="drawer-section">
+            <div className="drawer-field-label">Notes</div>
+            <textarea className="notes-input" style={{width:'100%'}}
+              value={t.notes||''}
+              placeholder="Add notes…"
+              onChange={e=>setT(p=>({...p,notes:e.target.value}))}
+              onBlur={e=>{if(!isNew)save({notes:e.target.value});}}
+            />
+          </div>
+
+          {/* Photos */}
+          <div className="drawer-section">
+            <div className="drawer-field-label">Photos</div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:8,alignItems:'center'}}>
+              {photos.map((src,i)=>(
+                <div key={i} style={{position:'relative'}}>
+                  <img src={src} style={{width:72,height:72,objectFit:'cover',borderRadius:10,border:'1px solid #eee'}}/>
+                  <button onClick={()=>{
+                    const p=photos.filter((_,j)=>j!==i);
+                    setT(prev=>({...prev,photos:p}));
+                    if(!isNew)save({photos:p});
+                  }} style={{position:'absolute',top:-6,right:-6,background:'#dc3545',color:'white',border:'none',borderRadius:'50%',width:18,height:18,fontSize:11,cursor:'pointer',lineHeight:'18px',padding:0}}>×</button>
+                </div>
+              ))}
+              <label style={{width:72,height:72,borderRadius:10,border:'2px dashed #dde',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'#aaa',fontSize:22}}>
+                +
+                <input type="file" accept="image/*" multiple style={{display:'none'}}
+                  onChange={e=>{Array.from(e.target.files).forEach(f=>addPhoto(f));e.target.value='';}}/>
+              </label>
+            </div>
+          </div>
+
+          {/* CTA */}
+          {isNew?(
+            <button onClick={create} disabled={saving||!t.title.trim()}
+              style={{width:'100%',padding:'14px',background:t.title.trim()?'#0f3460':'#ccc',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:t.title.trim()?'pointer':'default',marginBottom:8}}>
+              {saving?'Adding…':'Add Task'}
+            </button>
+          ):(
+            <>
+              {t.status!=='done'?(
+                <button onClick={markDone} style={{width:'100%',padding:'14px',background:'#0f3460',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',marginBottom:8}}>
+                  ✅ Mark as Done
+                </button>
+              ):(
+                <div style={{textAlign:'center',padding:'12px',background:'#f0faf2',borderRadius:12,color:'#28a745',fontWeight:700,fontSize:14,marginBottom:8}}>✅ Completed</div>
+              )}
+              <div className="drawer-delete-row">
+                <button className="drawer-delete-link" onClick={deleteTask}>Delete task</button>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -2441,6 +2413,8 @@ function AllTasksPage({currentUser,properties,onOpenProp}){
   const[allTasks,setAllTasks]=React.useState({});
   const[loading,setLoading]=React.useState(true);
   const[editingTask,setEditingTask]=React.useState(null); // {task, propId, address}
+  const[addingForProp,setAddingForProp]=React.useState(null); // {propId, address} for new task
+  const[showPropPicker,setShowPropPicker]=React.useState(false);
 
   React.useEffect(()=>{
     if(!properties.length){setLoading(false);return;}
@@ -2473,16 +2447,13 @@ function AllTasksPage({currentUser,properties,onOpenProp}){
 
   const totalOpen=propsWithTasks.reduce((s,p)=>s+p.openTasks.length,0);
 
-  if(propsWithTasks.length===0)return(
-    <div className="all-tasks-empty">
-      <div style={{fontSize:48,marginBottom:12}}>✅</div>
-      <h2 style={{fontSize:18,color:'#666',marginBottom:6}}>All caught up!</h2>
-      <p style={{fontSize:14}}>No open tasks across any property.</p>
-    </div>
-  );
+  function startAdd(){
+    if(properties.length===1){setAddingForProp({propId:properties[0].id,address:properties[0].address});}
+    else{setShowPropPicker(true);}
+  }
 
-  return(
-    <div style={{padding:'16px 16px 0'}}>
+  const pickerAndDrawer=(
+    <>
       {editingTask&&(
         <TaskEditDrawer
           task={editingTask.task}
@@ -2492,6 +2463,47 @@ function AllTasksPage({currentUser,properties,onOpenProp}){
           onClose={()=>setEditingTask(null)}
         />
       )}
+      {addingForProp&&(
+        <TaskEditDrawer
+          task={null}
+          propId={addingForProp.propId}
+          address={addingForProp.address}
+          currentUser={currentUser}
+          onClose={()=>setAddingForProp(null)}
+        />
+      )}
+      {showPropPicker&&(
+        <div className="modal-overlay" onClick={()=>setShowPropPicker(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <h2>Add Task — Which Property?</h2>
+            {properties.map(p=>(
+              <button key={p.id} onClick={()=>{setAddingForProp({propId:p.id,address:p.address});setShowPropPicker(false);}}
+                style={{display:'block',width:'100%',textAlign:'left',padding:'12px 14px',marginBottom:8,background:'#f4f7fb',border:'1.5px solid #dde',borderRadius:10,fontSize:14,fontWeight:600,color:'#1a1a2e',cursor:'pointer'}}>
+                {p.address}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  if(propsWithTasks.length===0)return(
+    <div style={{padding:'16px 16px 0'}}>
+      {pickerAndDrawer}
+      <button className="task-add-fab" onClick={startAdd}>＋ Add Task</button>
+      <div className="all-tasks-empty">
+        <div style={{fontSize:48,marginBottom:12}}>✅</div>
+        <h2 style={{fontSize:18,color:'#666',marginBottom:6}}>All caught up!</h2>
+        <p style={{fontSize:14}}>No open tasks across any property.</p>
+      </div>
+    </div>
+  );
+
+  return(
+    <div style={{padding:'16px 16px 0'}}>
+      {pickerAndDrawer}
+      <button className="task-add-fab" onClick={startAdd}>＋ Add Task</button>
       <div style={{fontSize:13,color:'#888',marginBottom:14,fontWeight:600}}>{totalOpen} open task{totalOpen!==1?'s':''} across {propsWithTasks.length} propert{propsWithTasks.length!==1?'ies':'y'}</div>
       {propsWithTasks.map(prop=>(
         <div key={prop.id} className="all-tasks-prop">
