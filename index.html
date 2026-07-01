@@ -3207,9 +3207,84 @@ function ScopeOverviewPage({data,onOpenCat}){
   );
 }
 
+// ── OwnerSection ─────────────────────────────────────────────────────
+function OwnerSection({propId, currentUser, members}){
+  const[tasks,setTasks]=React.useState({});
+  const[notes,setNotes]=React.useState('');
+  const[drawerTask,setDrawerTask]=React.useState(null);
+  const basePath=`projects/${propId}/privateTasks`;
+  const notesPath=`projects/${propId}/privateNotes`;
+
+  React.useEffect(()=>{
+    const unsub=dbListen(basePath,t=>setTasks(t||{}));
+    dbGet(notesPath).then(v=>setNotes(v||''));
+    return unsub;
+  },[propId]);
+
+  const list=Object.values(tasks).sort((a,b)=>(b.urgent?1:0)-(a.urgent?1:0)||(a.createdAt||0)-(b.createdAt||0));
+  const now=Date.now();
+  function dueBadge(due){
+    if(!due)return null;
+    const d=new Date(due); const diff=d-now;
+    if(diff<0)return <span className="task-due-overdue">Overdue</span>;
+    if(diff<172800000)return <span className="task-due-soon">{d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>;
+    return <span style={{fontSize:11,color:'#aaa'}}>{d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>;
+  }
+
+  return(
+    <div className="content">
+      <div style={{background:'rgba(220,53,69,.08)',border:'1px solid rgba(220,53,69,.25)',borderRadius:10,padding:'10px 14px',marginBottom:16,display:'flex',alignItems:'center',gap:10}}>
+        <span style={{fontSize:18}}>🔒</span>
+        <span style={{fontSize:13,color:'#c0392b',fontWeight:600}}>Private — visible only to Members</span>
+      </div>
+
+      <div className="budget-section-title">Private Tasks</div>
+      <button className="task-add-fab" onClick={()=>setDrawerTask('new')}>＋ Add Private Task</button>
+      {list.length===0&&<div style={{textAlign:'center',color:'#bbb',fontSize:14,padding:'12px 0'}}>No private tasks</div>}
+      {list.map(task=>(
+        <div key={task.id} className="task-card" onClick={()=>setDrawerTask(task)}>
+          <div style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px'}}>
+            {task.urgent&&<span className="task-urgent-pip"/>}
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontWeight:700,fontSize:15,color:'#111',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{task.title}</div>
+              {(task.assignedTo||task.dueDate)&&(
+                <div style={{display:'flex',gap:8,marginTop:3,flexWrap:'wrap'}}>
+                  {task.assignedTo&&<span style={{fontSize:12,color:'#555'}}>{task.assignedTo}</span>}
+                  {dueBadge(task.dueDate)}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+
+      <div className="budget-section-title" style={{marginTop:20}}>Private Notes</div>
+      <textarea
+        value={notes}
+        onChange={e=>setNotes(e.target.value)}
+        onBlur={()=>dbSet(notesPath,notes)}
+        placeholder="Employee info, sensitive notes, private details…"
+        style={{width:'100%',minHeight:130,border:'1.5px solid #dde',borderRadius:10,padding:'10px 12px',fontSize:14,color:'#222',resize:'vertical',boxSizing:'border-box',fontFamily:'inherit',lineHeight:1.5}}
+      />
+
+      {drawerTask!==null&&(
+        <TaskEditDrawer
+          task={drawerTask==='new'?null:drawerTask}
+          basePath={basePath}
+          propId={propId}
+          address="Private"
+          currentUser={currentUser}
+          members={members}
+          onClose={()=>setDrawerTask(null)}
+        />
+      )}
+    </div>
+  );
+}
+
 // ── WalkthroughView ──────────────────────────────────────────────────
 function WalkthroughView({prop,currentUser,onBack,onPropUpdate}){
-  const TAB_SUMMARY=-1,TAB_TEAM=-2,TAB_TASKS=-3,TAB_MGMT=-4,TAB_SCOPE=-5;
+  const TAB_SUMMARY=-1,TAB_TEAM=-2,TAB_TASKS=-3,TAB_MGMT=-4,TAB_SCOPE=-5,TAB_OWNER=-6;
   const initStage=prop.stage||'walkthrough';
   const[activeTab,setActiveTab]=React.useState(initStage==='contract'||initStage==='renovation'?TAB_MGMT:TAB_SUMMARY);
   const[data,setData]=React.useState({});
@@ -3225,6 +3300,7 @@ function WalkthroughView({prop,currentUser,onBack,onPropUpdate}){
   const[syncStatus,setSyncStatus]=React.useState('syncing');
   const isOwner=prop.ownerId===currentUser.uid;
   const username=currentUser.displayName||currentUser.email;
+  const canSeeOwner=isOwner||members[currentUser.uid]?.role==='Member';
 
   // Merge remote data+photos into a single state object
   const photosRef=React.useRef({});
@@ -3434,6 +3510,11 @@ function WalkthroughView({prop,currentUser,onBack,onPropUpdate}){
           <div className={`tab${activeTab===TAB_TEAM?' active':''}`} onClick={()=>setActiveTab(TAB_TEAM)}>
             👥 Team{totalUnread>0&&<span className="notif-badge">{totalUnread}</span>}
           </div>
+          {canSeeOwner&&(
+            <div className={`tab${activeTab===TAB_OWNER?' active':''}`} onClick={()=>setActiveTab(TAB_OWNER)}>
+              🔒 Owner
+            </div>
+          )}
         </div>
       </div>
 
@@ -3446,6 +3527,7 @@ function WalkthroughView({prop,currentUser,onBack,onPropUpdate}){
         </div>
       )}
 
+      {activeTab===TAB_OWNER&&canSeeOwner&&<OwnerSection propId={prop.id} currentUser={currentUser} members={members}/>}
       {activeTab===TAB_SUMMARY&&<SummaryPage summary={data._summary} onChange={updateSummary} onView={src=>setLightbox(src)} propId={prop.id} address={prop.address} currentUser={currentUser} onApplyAI={applyAIScope} isOwner={isOwner} members={members}/>}
       {activeTab===TAB_TEAM&&<ParticipantsPage prop={prop} data={data} currentUser={currentUser} isOwner={isOwner}/>}
       {activeTab===TAB_TASKS&&<TasksPage propId={prop.id} address={prop.address} currentUser={currentUser} members={members}/>}
