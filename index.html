@@ -2234,8 +2234,15 @@ function BudgetSection({propId}){
   const[gcPayments,setGcPayments]=React.useState({});
   const[extraPayments,setExtraPayments]=React.useState({});
   const[materialsSpent,setMaterialsSpent]=React.useState('');
+  const[otherSpent,setOtherSpent]=React.useState('');
   const[startDate,setStartDate]=React.useState('');
   const[endDate,setEndDate]=React.useState('');
+  const[sheetId,setSheetId]=React.useState('');
+  const[sheetTab,setSheetTab]=React.useState('');
+  const[lastSync,setLastSync]=React.useState(null);
+  const[syncing,setSyncing]=React.useState(false);
+  const[syncError,setSyncError]=React.useState('');
+  const[showSync,setShowSync]=React.useState(false);
 
   React.useEffect(()=>{
     return dbListen(base,b=>{
@@ -2245,8 +2252,12 @@ function BudgetSection({propId}){
       setGcPayments(b.gcPayments||{});
       setExtraPayments(b.extraPayments||{});
       setMaterialsSpent(b.materialsSpent||'');
+      setOtherSpent(b.otherSpent||'');
       setStartDate(b.startDate||'');
       setEndDate(b.endDate||'');
+      setSheetId(b.sheetId||'');
+      setSheetTab(b.sheetTab||'');
+      setLastSync(b.lastSync||null);
     });
   },[propId]);
 
@@ -2257,7 +2268,8 @@ function BudgetSection({propId}){
   const extraList=Object.values(extraPayments).sort((a,b)=>(a.id||'').localeCompare(b.id||''));
   const laborSpent=sumPayments(gcPayments)+sumPayments(extraPayments);
   const matSpent=parseFloat(materialsSpent)||0;
-  const totalSpent=laborSpent+matSpent;
+  const otherSpentNum=parseFloat(otherSpent)||0;
+  const totalSpent=laborSpent+matSpent+otherSpentNum;
   const budget=parseFloat(totalBudget)||0;
   const remaining=budget-totalSpent;
   const remCls=remaining<0?'budget-remaining-over':remaining<budget*0.1?'budget-remaining-warn':'budget-remaining-ok';
@@ -2293,6 +2305,7 @@ function BudgetSection({propId}){
     }
     if(laborSpent>0) addSeg(laborSpent,'#0f3460');
     if(matSpent>0) addSeg(matSpent,'#e2b04a');
+    if(otherSpentNum>0) addSeg(otherSpentNum,'#28a745');
     if(remaining>0) addSeg(remaining,'#e8f0fb');
     if(remaining<0) addSeg(Math.abs(remaining),'#dc3545');
 
@@ -2385,6 +2398,9 @@ function BudgetSection({propId}){
             </div>
             <div style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:'#555'}}>
               <span style={{width:10,height:10,borderRadius:2,background:'#e2b04a',display:'inline-block',flexShrink:0}}/>Materials
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:'#555'}}>
+              <span style={{width:10,height:10,borderRadius:2,background:'#28a745',display:'inline-block',flexShrink:0}}/>Other
             </div>
             <div style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:'#555'}}>
               <span style={{width:10,height:10,borderRadius:2,background:'#e8f0fb',border:'1px solid #aac4e8',display:'inline-block',flexShrink:0}}/>Remaining
@@ -2482,6 +2498,17 @@ function BudgetSection({propId}){
           onBlur={e=>dbUpdate(base,{materialsSpent:e.target.value})}/>
       </div>
 
+      {/* ── Other ── */}
+      <hr className="budget-divider"/>
+      <div className="budget-section-title" style={{marginTop:0}}>Other Expenses</div>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <span style={{fontSize:13,color:'#666'}}>Closing costs, misc, etc.</span>
+        <input className="budget-amount-input" type="number" min="0" placeholder="$0"
+          value={otherSpent}
+          onChange={e=>setOtherSpent(e.target.value)}
+          onBlur={e=>dbUpdate(base,{otherSpent:e.target.value})}/>
+      </div>
+
       {/* ── Summary ── */}
       {(budget>0||totalSpent>0)&&(
         <>
@@ -2490,6 +2517,7 @@ function BudgetSection({propId}){
           {budget>0&&<div className="budget-summary-row"><span>Total Budget</span><span style={{fontWeight:600}}>{fmt(budget)}</span></div>}
           <div className="budget-summary-row"><span>Labor</span><span style={{fontWeight:600}}>{fmt(laborSpent)}</span></div>
           <div className="budget-summary-row"><span>Materials</span><span style={{fontWeight:600}}>{fmt(matSpent)}</span></div>
+          {otherSpentNum>0&&<div className="budget-summary-row"><span>Other</span><span style={{fontWeight:600}}>{fmt(otherSpentNum)}</span></div>}
           <div className="budget-summary-row total"><span>Total Spent</span><span>{fmt(totalSpent)}</span></div>
           {budget>0&&(
             <div style={{display:'flex',justifyContent:'flex-end',marginTop:6}}>
@@ -2500,6 +2528,69 @@ function BudgetSection({propId}){
           )}
         </>
       )}
+
+      {/* ── Sheet Sync ── */}
+      <hr className="budget-divider"/>
+      <div style={{marginTop:4}}>
+        <button onClick={()=>setShowSync(s=>!s)} style={{background:'none',border:'none',padding:0,cursor:'pointer',display:'flex',alignItems:'center',gap:6,width:'100%'}}>
+          <span style={{fontSize:13,fontWeight:700,color:'#0f3460'}}>🔗 Google Sheet Sync</span>
+          {lastSync&&<span style={{fontSize:11,color:'#aaa',marginLeft:'auto'}}>Last sync: {new Date(lastSync).toLocaleDateString()}</span>}
+          {sheetTab&&!lastSync&&<span style={{fontSize:11,color:'#28a745',marginLeft:'auto'}}>Connected</span>}
+          <span style={{fontSize:12,color:'#aaa'}}>{showSync?'▲':'▼'}</span>
+        </button>
+        {showSync&&(
+          <div style={{marginTop:10,padding:'12px',background:'#f8f9ff',borderRadius:10,border:'1px solid #e0e8ff'}}>
+            <div style={{fontSize:11,color:'#888',marginBottom:8}}>When synced, Materials + Labor + Other pull directly from your Google Sheet TOTAL row.</div>
+            <div style={{marginBottom:8}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#555',marginBottom:3}}>Sheet ID</div>
+              <input placeholder="Paste Google Sheet ID or URL…" value={sheetId}
+                onChange={e=>{
+                  let v=e.target.value.trim();
+                  const m=v.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+                  if(m)v=m[1];
+                  setSheetId(v);
+                }}
+                style={{width:'100%',border:'1.5px solid #dde',borderRadius:8,padding:'7px 10px',fontSize:13,boxSizing:'border-box',fontFamily:'inherit'}}/>
+            </div>
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#555',marginBottom:3}}>Tab Name</div>
+              <input placeholder="e.g. 1135 S Bell" value={sheetTab}
+                onChange={e=>setSheetTab(e.target.value)}
+                style={{width:'100%',border:'1.5px solid #dde',borderRadius:8,padding:'7px 10px',fontSize:13,boxSizing:'border-box',fontFamily:'inherit'}}/>
+            </div>
+            {syncError&&<div style={{fontSize:12,color:'#dc3545',marginBottom:8}}>{syncError}</div>}
+            <button disabled={!sheetId||!sheetTab||syncing} onClick={async()=>{
+              setSyncing(true);setSyncError('');
+              try{
+                const res=await fetch('/.netlify/functions/sync-budget',{
+                  method:'POST',
+                  headers:{'Content-Type':'application/json'},
+                  body:JSON.stringify({propId,sheetId,tabName:sheetTab}),
+                });
+                if(!res.ok){const t=await res.text();throw new Error(t);}
+              }catch(e){setSyncError(e.message);}
+              finally{setSyncing(false);}
+            }} style={{width:'100%',padding:'9px',background:syncing?'#aaa':'#0f3460',color:'white',border:'none',borderRadius:8,fontWeight:700,fontSize:13,cursor:syncing?'default':'pointer'}}>
+              {syncing?'Syncing…':'⟳ Sync Now'}
+            </button>
+            <div style={{fontSize:11,color:'#aaa',marginTop:8,lineHeight:1.4}}>
+              For auto-sync on every save, paste this into your sheet's Apps Script (Extensions → Apps Script):
+              <pre style={{background:'#f0f0f0',borderRadius:6,padding:'8px',marginTop:6,fontSize:10,overflowX:'auto',whiteSpace:'pre-wrap',wordBreak:'break-all'}}>{`function onEdit(e) {
+  if (e.source.getActiveSheet().getName() !== "${sheetTab||'YOUR TAB NAME'}") return;
+  UrlFetchApp.fetch("https://zanco.netlify.app/.netlify/functions/sync-budget", {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify({
+      propId: "${propId}",
+      sheetId: "${sheetId||'YOUR SHEET ID'}",
+      tabName: "${sheetTab||'YOUR TAB NAME'}"
+    })
+  });
+}`}</pre>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
