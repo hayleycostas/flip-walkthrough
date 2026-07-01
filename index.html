@@ -2173,12 +2173,18 @@ function MigrationModal({currentUser,onDone}){
 }
 
 // ── Property List ────────────────────────────────────────────────────
-function TaskEditDrawer({task, propId, address, currentUser, members: membersProp, onClose}){
+function TaskEditDrawer({task, propId, basePath: basePathProp, address, currentUser, members: membersProp, onClose}){
   const isNew=!task;
   const username=currentUser.displayName||currentUser.email;
+  // basePath can be passed directly (for general tasks) or derived from propId
+  const basePath=basePathProp||(propId?`projects/${propId}/tasks`:null);
+
   const[fetchedMembers,setFetchedMembers]=React.useState(null);
   React.useEffect(()=>{
-    if(!membersProp)dbGet(`projects/${propId}/members`).then(m=>setFetchedMembers(m||{}));
+    if(!membersProp){
+      if(propId) dbGet(`projects/${propId}/members`).then(m=>setFetchedMembers(m||{}));
+      else setFetchedMembers({});
+    }
   },[propId,membersProp]);
   const membersObj=membersProp||(fetchedMembers||{});
   const memberList=React.useMemo(()=>Object.entries(membersObj).sort((a,b)=>a[1].name.localeCompare(b[1].name)),[membersObj]);
@@ -2191,10 +2197,10 @@ function TaskEditDrawer({task, propId, address, currentUser, members: membersPro
   React.useEffect(()=>{if(task)setT(task);},[task]);
 
   async function save(patch){
-    if(isNew)return; // new tasks saved via create()
+    if(isNew)return;
     const updated={...t,...patch,updatedAt:Date.now(),updatedBy:username};
     setT(updated);
-    await dbUpdate(`projects/${propId}/tasks/${task.id}`,{...patch,updatedAt:Date.now(),updatedBy:username});
+    await dbUpdate(`${basePath}/${task.id}`,{...patch,updatedAt:Date.now(),updatedBy:username});
   }
 
   async function create(){
@@ -2202,12 +2208,12 @@ function TaskEditDrawer({task, propId, address, currentUser, members: membersPro
     setSaving(true);
     const id=uid();
     const now=Date.now();
-    await dbSet(`projects/${propId}/tasks/${id}`,{
+    await dbSet(`${basePath}/${id}`,{
       id,title:t.title.trim(),status:'todo',notes:t.notes||'',
       assignedTo:t.assignedTo||'',tagged:t.tagged||{},urgent:!!t.urgent,
       dueDate:t.dueDate||'',createdBy:username,createdAt:now,updatedAt:now,updatedBy:username,
     });
-    if(t.assignedTo){
+    if(t.assignedTo&&propId){
       const entry=memberList.find(([,m])=>m.name===t.assignedTo);
       if(entry) fetch('/.netlify/functions/notify-assignment',{
         method:'POST',headers:{'Content-Type':'application/json'},
@@ -2222,7 +2228,7 @@ function TaskEditDrawer({task, propId, address, currentUser, members: membersPro
     clearTimeout(toastTimer.current);
     setToast(true);
     toastTimer.current=setTimeout(async()=>{
-      await dbRemove(`projects/${propId}/tasks/${task.id}`);
+      await dbRemove(`${basePath}/${task.id}`);
       setToast(false);onClose();
     },800);
   }
@@ -2235,7 +2241,7 @@ function TaskEditDrawer({task, propId, address, currentUser, members: membersPro
 
   async function deleteTask(){
     if(!window.confirm('Delete this task?'))return;
-    await dbRemove(`projects/${propId}/tasks/${task.id}`);
+    await dbRemove(`${basePath}/${task.id}`);
     onClose();
   }
 
@@ -2245,7 +2251,7 @@ function TaskEditDrawer({task, propId, address, currentUser, members: membersPro
       r.onload=async ev=>{try{res(await compressImage(ev.target.result));}catch(err){rej(err);}};
       r.onerror=rej;r.readAsDataURL(file);
     });
-    const cur=isNew?t:(await dbGet(`projects/${propId}/tasks/${task.id}`))||t;
+    const cur=isNew?t:(await dbGet(`${basePath}/${task.id}`))||t;
     const photos=[...(cur.photos||[]),src];
     if(isNew){setT(p=>({...p,photos}));}else{save({photos});}
   }
@@ -2411,11 +2417,25 @@ function TaskEditDrawer({task, propId, address, currentUser, members: membersPro
 
 function AllTasksPage({currentUser,properties,onOpenProp}){
   const[allTasks,setAllTasks]=React.useState({});
-  const[allMembers,setAllMembers]=React.useState({}); // propId → members obj
+  const[allMembers,setAllMembers]=React.useState({});
+  const[generalTasks,setGeneralTasks]=React.useState({});
+  const[roster,setRoster]=React.useState({});
   const[loading,setLoading]=React.useState(true);
-  const[editingTask,setEditingTask]=React.useState(null); // {task, propId, address}
-  const[addingForProp,setAddingForProp]=React.useState(null); // {propId, address} for new task
+  const[editingTask,setEditingTask]=React.useState(null);
+  const[addingForProp,setAddingForProp]=React.useState(null);
   const[showPropPicker,setShowPropPicker]=React.useState(false);
+  const[addingGeneral,setAddingGeneral]=React.useState(false);
+  const[editingGeneral,setEditingGeneral]=React.useState(null);
+
+  const generalBasePath=`users/${currentUser.uid}/generalTasks`;
+
+  React.useEffect(()=>{
+    // listen to general tasks
+    const unsub=dbListen(generalBasePath,t=>setGeneralTasks(t||{}));
+    // fetch roster for assignee chips on general tasks
+    dbGet(`roster/${currentUser.uid}`).then(r=>setRoster(r||{}));
+    return unsub;
+  },[currentUser.uid]);
 
   React.useEffect(()=>{
     if(!properties.length){setLoading(false);return;}
@@ -2431,7 +2451,6 @@ function AllTasksPage({currentUser,properties,onOpenProp}){
         if(loaded>=properties.length)setLoading(false);
       });
       unsubs.push(unsub);
-      // fetch members for each property so assignee chips are instant
       dbGet(`projects/${prop.id}/members`).then(m=>
         setAllMembers(prev=>({...prev,[prop.id]:m||{}}))
       );
@@ -2457,6 +2476,37 @@ function AllTasksPage({currentUser,properties,onOpenProp}){
     else{setShowPropPicker(true);}
   }
 
+  const openGeneralTasks=Object.values(generalTasks).filter(t=>t.status!=='done')
+    .sort((a,b)=>(b.urgent?1:0)-(a.urgent?1:0)||(a.createdAt-b.createdAt));
+
+  const generalSection=(
+    <div className="all-tasks-prop" style={{marginBottom:16}}>
+      <div className="all-tasks-prop-header" style={{cursor:'default'}}>
+        <div style={{flex:1}}>
+          <div className="all-tasks-prop-address">📋 General</div>
+          <div style={{fontSize:12,color:'#888',fontWeight:600,marginTop:2}}>Not tied to a property</div>
+        </div>
+        <button onClick={()=>setAddingGeneral(true)}
+          style={{background:'#0f3460',color:'white',border:'none',borderRadius:20,padding:'5px 14px',fontSize:12,fontWeight:700,cursor:'pointer'}}>
+          + Add
+        </button>
+      </div>
+      {openGeneralTasks.length===0?(
+        <div style={{padding:'10px 14px',color:'#bbb',fontSize:13}}>No general tasks yet.</div>
+      ):openGeneralTasks.map(task=>(
+        <div key={task.id} className={`all-tasks-row${task.urgent?' urgent':''}`}
+          onClick={()=>setEditingGeneral(task)}>
+          <button className={`all-tasks-urgent-btn${task.urgent?' on':''}`}
+            onClick={e=>{e.stopPropagation();dbUpdate(`${generalBasePath}/${task.id}`,{urgent:!task.urgent,updatedAt:Date.now()});}}>!</button>
+          <div className="all-tasks-dot" style={{background:task.urgent?'#dc3545':task.assignedTo?'#0f3460':'#ddd'}}/>
+          <span className="all-tasks-title">{task.title}</span>
+          {task.assignedTo&&<span className="all-tasks-assignee">👤 {task.assignedTo}</span>}
+          <span style={{color:'#ccc',fontSize:14,flexShrink:0}}>✎</span>
+        </div>
+      ))}
+    </div>
+  );
+
   const pickerAndDrawer=(
     <>
       {editingTask&&(
@@ -2479,6 +2529,26 @@ function AllTasksPage({currentUser,properties,onOpenProp}){
           onClose={()=>setAddingForProp(null)}
         />
       )}
+      {addingGeneral&&(
+        <TaskEditDrawer
+          task={null}
+          basePath={generalBasePath}
+          address="General"
+          currentUser={currentUser}
+          members={roster}
+          onClose={()=>setAddingGeneral(false)}
+        />
+      )}
+      {editingGeneral&&(
+        <TaskEditDrawer
+          task={editingGeneral}
+          basePath={generalBasePath}
+          address="General"
+          currentUser={currentUser}
+          members={roster}
+          onClose={()=>setEditingGeneral(null)}
+        />
+      )}
       {showPropPicker&&(
         <div className="modal-overlay" onClick={()=>setShowPropPicker(false)}>
           <div className="modal" onClick={e=>e.stopPropagation()}>
@@ -2495,50 +2565,45 @@ function AllTasksPage({currentUser,properties,onOpenProp}){
     </>
   );
 
-  if(propsWithTasks.length===0)return(
-    <div style={{padding:'16px 16px 0'}}>
-      {pickerAndDrawer}
-      <button className="task-add-fab" onClick={startAdd}>＋ Add Task</button>
-      <div className="all-tasks-empty">
-        <div style={{fontSize:48,marginBottom:12}}>✅</div>
-        <h2 style={{fontSize:18,color:'#666',marginBottom:6}}>All caught up!</h2>
-        <p style={{fontSize:14}}>No open tasks across any property.</p>
-      </div>
-    </div>
-  );
-
   return(
     <div style={{padding:'16px 16px 0'}}>
       {pickerAndDrawer}
-      <button className="task-add-fab" onClick={startAdd}>＋ Add Task</button>
-      <div style={{fontSize:13,color:'#888',marginBottom:14,fontWeight:600}}>{totalOpen} open task{totalOpen!==1?'s':''} across {propsWithTasks.length} propert{propsWithTasks.length!==1?'ies':'y'}</div>
-      {propsWithTasks.map(prop=>(
-        <div key={prop.id} className="all-tasks-prop">
-          <div className="all-tasks-prop-header" onClick={()=>onOpenProp(prop)}>
-            <div style={{flex:1,minWidth:0}}>
-              <div className="all-tasks-prop-address">{prop.address}</div>
-              <div style={{fontSize:12,color:stageBadgeColor[prop.stage||'walkthrough'],fontWeight:600,marginTop:2}}>
-                {prop.stage==='contract'?'📝 Under Contract':prop.stage==='renovation'?'🔨 Renovation':'🔍 Walkthrough'}
-              </div>
-            </div>
-            <span className="all-tasks-prop-count">{prop.openTasks.length} open</span>
-            <span style={{color:'#ccc',fontSize:16}}>›</span>
+      {generalSection}
+      {propsWithTasks.length>0&&(
+        <>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
+            <div style={{fontSize:13,color:'#888',fontWeight:600}}>{totalOpen} open task{totalOpen!==1?'s':''} across {propsWithTasks.length} propert{propsWithTasks.length!==1?'ies':'y'}</div>
+            <button onClick={startAdd}
+              style={{background:'#0f3460',color:'white',border:'none',borderRadius:20,padding:'5px 14px',fontSize:12,fontWeight:700,cursor:'pointer'}}>
+              + Add
+            </button>
           </div>
-          {prop.openTasks.sort((a,b)=>((b.urgent?1:0)-(a.urgent?1:0))).map(task=>(
-            <div key={task.id} className={`all-tasks-row${task.urgent?' urgent':''}`} onClick={()=>setEditingTask({task,propId:prop.id,address:prop.address})}>
-              <button className={`all-tasks-urgent-btn${task.urgent?' on':''}`}
-                onClick={e=>{
-                  e.stopPropagation();
-                  dbUpdate(`projects/${prop.id}/tasks/${task.id}`,{urgent:!task.urgent,updatedAt:Date.now()});
-                }}>!</button>
-              <div className="all-tasks-dot" style={{background:task.urgent?'#dc3545':task.assignedTo?'#0f3460':'#ddd'}}/>
-              <span className="all-tasks-title">{task.title}</span>
-              {task.assignedTo&&<span className="all-tasks-assignee">👤 {task.assignedTo}</span>}
-              <span style={{color:'#ccc',fontSize:14,flexShrink:0}}>✎</span>
+          {propsWithTasks.map(prop=>(
+            <div key={prop.id} className="all-tasks-prop">
+              <div className="all-tasks-prop-header" onClick={()=>onOpenProp(prop)}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div className="all-tasks-prop-address">{prop.address}</div>
+                  <div style={{fontSize:12,color:stageBadgeColor[prop.stage||'walkthrough'],fontWeight:600,marginTop:2}}>
+                    {prop.stage==='contract'?'📝 Under Contract':prop.stage==='renovation'?'🔨 Renovation':'🔍 Walkthrough'}
+                  </div>
+                </div>
+                <span className="all-tasks-prop-count">{prop.openTasks.length} open</span>
+                <span style={{color:'#ccc',fontSize:16}}>›</span>
+              </div>
+              {prop.openTasks.sort((a,b)=>((b.urgent?1:0)-(a.urgent?1:0))).map(task=>(
+                <div key={task.id} className={`all-tasks-row${task.urgent?' urgent':''}`} onClick={()=>setEditingTask({task,propId:prop.id,address:prop.address})}>
+                  <button className={`all-tasks-urgent-btn${task.urgent?' on':''}`}
+                    onClick={e=>{e.stopPropagation();dbUpdate(`projects/${prop.id}/tasks/${task.id}`,{urgent:!task.urgent,updatedAt:Date.now()});}}>!</button>
+                  <div className="all-tasks-dot" style={{background:task.urgent?'#dc3545':task.assignedTo?'#0f3460':'#ddd'}}/>
+                  <span className="all-tasks-title">{task.title}</span>
+                  {task.assignedTo&&<span className="all-tasks-assignee">👤 {task.assignedTo}</span>}
+                  <span style={{color:'#ccc',fontSize:14,flexShrink:0}}>✎</span>
+                </div>
+              ))}
             </div>
           ))}
-        </div>
-      ))}
+        </>
+      )}
     </div>
   );
 }
