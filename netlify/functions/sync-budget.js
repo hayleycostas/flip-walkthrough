@@ -15,6 +15,20 @@ function parseDollar(val) {
   return parseFloat(String(val).replace(/[$,\s]/g, '')) || 0;
 }
 
+// Parse a CSV line respecting quoted fields
+function parseCSVLine(line) {
+  const cells = [];
+  let cur = '', inQuote = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQuote = !inQuote; }
+    else if (ch === ',' && !inQuote) { cells.push(cur.trim()); cur = ''; }
+    else { cur += ch; }
+  }
+  cells.push(cur.trim());
+  return cells;
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method not allowed' };
@@ -30,7 +44,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: 'Missing propId, sheetId, or tabName' };
   }
 
-  // Use Google's public CSV export — no API key needed for publicly shared sheets
+  // Fetch CSV export — no API key needed for publicly shared sheets
   const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
   const sheetsRes = await fetch(url, { redirect: 'follow' });
 
@@ -43,28 +57,48 @@ exports.handler = async (event) => {
     return { statusCode: 403, body: 'Sheet is not publicly accessible. Share it as "Anyone with the link can view".' };
   }
 
-  // Parse CSV rows
-  const rows = csv.trim().split('\n').map(line =>
-    line.split(',').map(cell => cell.trim().replace(/^"|"$/g, '').trim())
-  );
+  const rows = csv.trim().split('\n').map(parseCSVLine);
 
-  // Find the TOTAL row
-  const totalRow = rows.find(r => String(r[0] || '').trim().toUpperCase() === 'TOTAL');
-  if (!totalRow) {
-    return { statusCode: 404, body: `No TOTAL row found in tab "${tabName}". Rows seen: ${rows.slice(0,5).map(r=>r[0]).join(', ')}` };
+  // Find the header row — the one that has "Category" and "Amount" columns
+  let categoryCol = -1, amountCol = -1;
+  let headerRowIdx = -1;
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i].map(c => c.toLowerCase());
+    const catIdx = r.findIndex(c => c.includes('category'));
+    const amtIdx = r.findIndex(c => c.includes('amount'));
+    if (catIdx !== -1 && amtIdx !== -1) {
+      categoryCol = catIdx;
+      amountCol = amtIdx;
+      headerRowIdx = i;
+      break;
+    }
   }
 
-  // Column layout: A=Payment Method, B=Materials, C=Labor, D=Other, E=Closing Cost
-  const materialsSpent = parseDollar(totalRow[1]);
-  const laborSpent     = parseDollar(totalRow[2]);
-  const otherSpent     = parseDollar(totalRow[3]);
-  const closingCost    = parseDollar(totalRow[4]);
+  if (headerRowIdx === -1) {
+    return { statusCode: 404, body: `Could not find header row with "Category" and "Amount" columns in tab "${tabName}".` };
+  }
+
+  // Sum amounts by category for all data rows after the header
+  let materialsSpent = 0, laborSpent = 0, otherSpent = 0;
+
+  for (let i = headerRowIdx + 1; i < rows.length; i++) {
+    const row = rows[i];
+    const category = String(row[categoryCol] || '').trim().toLowerCase();
+    const amount = parseDollar(row[amountCol]);
+    if (category === 'materials') materialsSpent += amount;
+    else if (category === 'labor') laborSpent += amount;
+    else if (category === 'other') otherSpent += amount;
+  }
+
+  // Round to 2 decimal places
+  materialsSpent = Math.round(materialsSpent * 100) / 100;
+  laborSpent     = Math.round(laborSpent * 100) / 100;
+  otherSpent     = Math.round(otherSpent * 100) / 100;
 
   await fbUpdate(`projects/${propId}/budget`, {
     materialsSpent,
     laborSpent,
     otherSpent,
-    closingCost,
     lastSync: Date.now(),
     sheetId,
     sheetTab: tabName,
@@ -73,6 +107,6 @@ exports.handler = async (event) => {
   return {
     statusCode: 200,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ materialsSpent, laborSpent, otherSpent, closingCost }),
+    body: JSON.stringify({ materialsSpent, laborSpent, otherSpent }),
   };
 };
