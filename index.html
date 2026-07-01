@@ -2943,6 +2943,7 @@ function AllTasksPage({currentUser,properties,onOpenProp}){
 function GlobalOwnerPage({currentUser}){
   const[tasks,setTasks]=React.useState({});
   const[notes,setNotes]=React.useState('');
+  const[roster,setRoster]=React.useState({});
   const[drawerTask,setDrawerTask]=React.useState(null);
   const basePath=`users/${currentUser.uid}/privateTasks`;
   const notesPath=`users/${currentUser.uid}/privateNotes`;
@@ -2950,6 +2951,7 @@ function GlobalOwnerPage({currentUser}){
   React.useEffect(()=>{
     const unsub=dbListen(basePath,t=>setTasks(t||{}));
     dbGet(notesPath).then(v=>setNotes(v||''));
+    dbGet(`roster/${currentUser.uid}`).then(r=>setRoster(r||{}));
     return unsub;
   },[currentUser.uid]);
 
@@ -3005,7 +3007,7 @@ function GlobalOwnerPage({currentUser}){
           basePath={basePath}
           address="Private"
           currentUser={currentUser}
-          members={{}}
+          members={roster}
           onClose={()=>setDrawerTask(null)}
         />
       )}
