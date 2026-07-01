@@ -2230,6 +2230,7 @@ function PropBudgetBar({propId}){
 function BudgetSection({propId}){
   const base=`projects/${propId}/budget`;
   const[totalBudget,setTotalBudget]=React.useState('');
+  const[gcBudget,setGcBudget]=React.useState('');
   const[gcPayments,setGcPayments]=React.useState({});
   const[extraPayments,setExtraPayments]=React.useState({});
   const[materialsSpent,setMaterialsSpent]=React.useState('');
@@ -2240,6 +2241,7 @@ function BudgetSection({propId}){
     return dbListen(base,b=>{
       if(!b)return;
       setTotalBudget(b.totalBudget||'');
+      setGcBudget(b.gcBudget||'');
       setGcPayments(b.gcPayments||{});
       setExtraPayments(b.extraPayments||{});
       setMaterialsSpent(b.materialsSpent||'');
@@ -2430,6 +2432,30 @@ function BudgetSection({propId}){
 
       {/* ── Labor ── */}
       <div className="budget-section-title" style={{marginTop:0}}>Labor</div>
+      {/* GC Budget */}
+      {(()=>{
+        const[local,setLocal]=React.useState(gcBudget);
+        React.useEffect(()=>setLocal(gcBudget),[gcBudget]);
+        const gcSpent=sumPayments(gcPayments);
+        const gcBudgetNum=parseFloat(gcBudget)||0;
+        const gcRemaining=gcBudgetNum-gcSpent;
+        const gcRemCls=gcRemaining<0?'budget-remaining-over':gcRemaining<gcBudgetNum*0.1?'budget-remaining-warn':'budget-remaining-ok';
+        return(
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8,padding:'6px 0',borderBottom:'1px solid #f0f0f0'}}>
+            <div>
+              <div style={{fontSize:11,fontWeight:700,color:'#aaa',textTransform:'uppercase',letterSpacing:'.4px'}}>GC Budget</div>
+              {gcBudgetNum>0&&gcSpent>0&&(
+                <div className={gcRemCls} style={{fontSize:11,marginTop:2}}>
+                  {gcRemaining<0?`$${Math.abs(gcRemaining).toLocaleString()} over`:`$${gcRemaining.toLocaleString()} left`}
+                </div>
+              )}
+            </div>
+            <input className="budget-amount-input" type="number" min="0" placeholder="$0"
+              value={local} onChange={e=>setLocal(e.target.value)}
+              onBlur={e=>dbUpdate(base,{gcBudget:e.target.value})}/>
+          </div>
+        );
+      })()}
       <div style={{fontSize:11,fontWeight:700,color:'#aaa',textTransform:'uppercase',letterSpacing:'.4px',marginBottom:4}}>GC Payments</div>
       {gcList.map(p=><PaymentRow key={p.id} fieldKey="gcPayments" payment={p}/>)}
       <button className="budget-add-btn" onClick={()=>{const id=uid();dbUpdate(`${base}/gcPayments/${id}`,{id,amount:'',description:''});}}>+ Add GC Payment</button>
